@@ -14,32 +14,34 @@
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background: var(--bg-color); margin: 0; padding: 10px; -webkit-user-select: none; }
         #setup-screen { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 500px; margin: auto; padding: 10px; }
-        .cell { aspect-ratio: 1; border: 2px solid var(--main-color); background: white; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; position: relative; overflow: hidden; font-weight: bold; border-radius: 8px; }
+        .cell { aspect-ratio: 1; border: 2px solid var(--main-color); background: white; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; position: relative; overflow: hidden; font-weight: bold; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .cell img { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
         .cell span { z-index: 2; background: rgba(255,255,255,0.8); padding: 2px 4px; border-radius: 3px; text-transform: uppercase; }
         .completed { border-color: var(--win-color); background: #d4edda; pointer-events: none; }
-        #status { margin: 10px; padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; min-height: 50px; display: flex; align-items: center; justify-content: center; }
+        #status { margin: 10px; padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; min-height: 50px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
         #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); color: #f1c40f; z-index: 200; align-items: center; justify-content: center; flex-direction: column; font-size: 40px; font-weight: bold; }
-        input[type="text"] { padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; border: 2px solid #ddd; width: 80%; }
-        button { padding: 12px 30px; font-size: 18px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; }
+        input[type="text"] { padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; border: 2px solid #ddd; width: 80%; max-width: 300px; }
+        button { padding: 12px 30px; font-size: 18px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .reset-btn { background: #e67e22; margin-top: 20px; font-size: 14px; padding: 10px 20px; }
     </style>
 </head>
 <body>
 
     <div id="setup-screen">
-        <h1>📍 Kúkovské Bingo</h1>
+        <h1 style="color: var(--main-color);">📍 Kúkovské Bingo</h1>
+        <p>Zadaj meno a nájdi 5 v rade!</p>
         <input type="text" id="player-name" placeholder="Tvoje meno">
         <button onclick="startGame()">SPUSTIŤ HRU</button>
-        <p id="load-msg">Načítavam AI...</p>
+        <p id="load-msg" style="font-size: 12px; color: #7f8c8d; margin-top: 20px;">Pripravujem AI senzory...</p>
     </div>
 
-    <div id="status">Pripravený...</div>
+    <div id="status">Pripravený na štart...</div>
     <div class="grid" id="board"></div>
 
     <div id="overlay">
         <span>BINGO! 🏆</span>
-        <div id="final-stats" style="font-size: 20px; color: white;"></div>
-        <button onclick="localStorage.removeItem('bingo_current_game'); location.reload();" style="margin-top:20px; font-size:14px;">RESET HRY</button>
+        <div id="final-stats" style="font-size: 20px; color: white; margin-top: 10px;"></div>
+        <button class="reset-btn" onclick="confirmReset()">NOVÁ HRA</button>
     </div>
 
     <script>
@@ -52,44 +54,46 @@
         let gameState = [];
 
         const bingoData = [
-            { id: 1, sk: "Hydrant", en: ["fire hydrant"] }, { id: 2, sk: "Mačka", en: ["cat"] },
+            { id: 1, sk: "Hydrant", en: ["fire hydrant"] }, { id: 2, sk: "Mačka", en: ["cat", "tabby"] },
             { id: 3, sk: "Kríž", en: ["crucifix", "cross"] }, { id: 4, sk: "Prechod", en: ["street sign"] },
-            { id: 5, sk: "Zel. bedňa", en: ["trash can", "garbage"] }, { id: 6, sk: "Vedro", en: ["bucket"] },
-            { id: 7, sk: "Biela Audi", en: ["car"] }, { id: 8, sk: "Nedostavaný", en: ["structure"] },
-            { id: 9, sk: "Lopata", en: ["shovel"] }, { id: 10, sk: "Živý plot", en: ["hedge"] },
+            { id: 5, sk: "Zel. bedňa", en: ["trash can", "garbage", "ashcan"] }, { id: 6, sk: "Vedro", en: ["bucket", "pail"] },
+            { id: 7, sk: "Biela Audi", en: ["car", "vehicle"] }, { id: 8, sk: "Nedostavaný", en: ["structure", "building"] },
+            { id: 9, sk: "Lopata", en: ["shovel"] }, { id: 10, sk: "Živý plot", en: ["hedge", "fence"] },
             { id: 11, sk: "Zelený plot", en: ["fence"] }, { id: 12, sk: "Žlté auto", en: ["car"] },
-            { id: 13, sk: "Fúrik", en: ["barrow"] }, { id: 14, sk: "Komín", en: ["chimney"] },
-            { id: 15, sk: "Bicykel", en: ["bicycle"] }, { id: 16, sk: "Lavička", en: ["bench"] },
-            { id: 17, sk: "Ihličnan", en: ["tree"] }, { id: 18, sk: "Hovno", en: ["poop"] },
+            { id: 13, sk: "Fúrik", en: ["barrow", "wheelbarrow"] }, { id: 14, sk: "Komín", en: ["chimney"] },
+            { id: 15, sk: "Bicykel", en: ["bicycle", "bike"] }, { id: 16, sk: "Lavička", en: ["bench"] },
+            { id: 17, sk: "Ihličnan", en: ["tree", "conifer"] }, { id: 18, sk: "Hovno", en: ["poop", "feces"] },
             { id: 19, sk: "Traktor", en: ["tractor"] }, { id: 20, sk: "Schody", en: ["stairs"] },
-            { id: 21, sk: "Sliepka", en: ["hen"] }, { id: 22, sk: "Schránka", en: ["mailbox"] },
-            { id: 23, sk: "Strecha", en: ["roof"] }, { id: 24, sk: "Brána", en: ["net"] },
-            { id: 25, sk: "Pneumatika", en: ["tire"] }
+            { id: 21, sk: "Sliepka", en: ["hen", "chicken"] }, { id: 22, sk: "Schránka", en: ["mailbox", "postbox"] },
+            { id: 23, sk: "Strecha", en: ["roof", "tile"] }, { id: 24, sk: "Brána", en: ["net", "goal"] },
+            { id: 25, sk: "Pneumatika", en: ["tire", "wheel"] }
         ];
 
         async function initApp() {
-            model = await mobilenet.load();
-            document.getElementById('load-msg').innerText = "✅ AI Ready";
-            const savedIdentity = localStorage.getItem('bingo_user_identity');
-            if(savedIdentity) document.getElementById('player-name').value = savedIdentity;
-            
-            // OBRYSOVÁ LOGIKA REŠTARTU:
-            const savedGame = localStorage.getItem('bingo_current_game');
-            if(savedGame) {
-                const data = JSON.parse(savedGame);
-                playerName = data.playerName;
-                startTime = new Date(data.startTime);
-                gameState = data.gameState;
-                document.getElementById('setup-screen').style.display = 'none';
-                renderBoard(true);
-                setInterval(autoSave, 5000);
-                setInterval(sendPendingEmail, 30000);
-            }
+            try {
+                model = await mobilenet.load();
+                document.getElementById('load-msg').innerText = "✅ AI Ready";
+                
+                const savedIdentity = localStorage.getItem('bingo_user_identity');
+                if(savedIdentity) document.getElementById('player-name').value = savedIdentity;
+                
+                const savedGame = localStorage.getItem('bingo_current_game');
+                if(savedGame) {
+                    const data = JSON.parse(savedGame);
+                    playerName = data.playerName;
+                    startTime = new Date(data.startTime);
+                    gameState = data.gameState;
+                    document.getElementById('setup-screen').style.display = 'none';
+                    renderBoard();
+                    setInterval(autoSave, 5000);
+                    setInterval(sendPendingEmail, 30000);
+                }
+            } catch (e) { document.getElementById('status').innerText = "❌ Chyba AI."; }
         }
 
         function startGame() {
             playerName = document.getElementById('player-name').value.trim();
-            if(!playerName) return alert("Meno!");
+            if(!playerName) return alert("Zadaj meno!");
             localStorage.setItem('bingo_user_identity', playerName);
             startTime = new Date();
             gameState = bingoData.sort(() => Math.random() - 0.5).map(item => ({...item, done: false, img: null}));
@@ -99,10 +103,10 @@
             setInterval(sendPendingEmail, 30000);
         }
 
-        function renderBoard(isResume = false) {
+        function renderBoard() {
             const board = document.getElementById('board');
             board.innerHTML = "";
-            gameState.forEach((item, index) => {
+            gameState.forEach((item) => {
                 const cell = document.createElement('div');
                 cell.className = 'cell' + (item.done ? ' completed' : '');
                 cell.innerHTML = `<span>${item.sk}</span>`;
@@ -110,25 +114,31 @@
                 
                 const input = document.createElement('input');
                 input.type = 'file'; input.accept = 'image/*'; input.capture = 'camera'; input.style.display = 'none';
-                cell.onclick = () => input.click();
+                cell.onclick = () => { if(!isGameOver) input.click(); };
                 
                 input.onchange = async (e) => {
                     const file = e.target.files[0];
                     if(!file) return;
-                    document.getElementById('status').innerText = "🔍 AI skúma...";
+                    document.getElementById('status').innerText = "🔍 AI skúma fotku...";
+                    
                     const reader = new FileReader();
                     reader.onload = async (event) => {
                         const imgData = event.target.result;
                         const img = new Image(); img.src = imgData;
                         img.onload = async () => {
                             const preds = await model.classify(img);
-                            if(preds.some(p => p.probability > 0.1 && item.en.some(k => p.className.toLowerCase().includes(k)))) {
+                            const found = preds.some(p => p.probability > 0.1 && item.en.some(k => p.className.toLowerCase().includes(k)));
+                            
+                            if(found) {
                                 item.done = true; item.img = imgData;
                                 cell.classList.add('completed');
                                 cell.innerHTML += `<img src="${imgData}">`;
+                                // TU JE TO SPÄŤ:
+                                document.getElementById('status').innerText = `🎯 Bingo! To je ${item.sk}!`;
                                 checkBingo();
                             } else {
-                                document.getElementById('status').innerText = "❌ Skús iný uhol!";
+                                const guess = preds[0].className.split(',')[0];
+                                document.getElementById('status').innerText = `❌ Nie, AI vidí: ${guess}`;
                             }
                         };
                     };
@@ -141,9 +151,7 @@
 
         function autoSave() {
             if(isGameOver) return;
-            localStorage.setItem('bingo_current_game', JSON.stringify({
-                playerName, startTime, gameState
-            }));
+            localStorage.setItem('bingo_current_game', JSON.stringify({ playerName, startTime, gameState }));
         }
 
         function checkBingo() {
@@ -156,10 +164,14 @@
             isGameOver = true;
             const diff = Math.floor((new Date() - startTime) / 1000);
             const timeStr = `${Math.floor(diff/60)}m ${diff%60}s`;
-            document.getElementById('final-stats').innerText = `Čas: ${timeStr}`;
+            document.getElementById('final-stats').innerText = `Tvoj čas: ${timeStr}`;
             document.getElementById('overlay').style.display = 'flex';
-            localStorage.setItem('pending_email', JSON.stringify({ player_name: playerName, name: playerName, time: timeStr, message: "Bingo z APP verzie!" }));
+            
+            localStorage.setItem('pending_email', JSON.stringify({ 
+                player_name: playerName, name: playerName, time: timeStr, message: "Bingo úspešne dokončené!" 
+            }));
             sendPendingEmail();
+            localStorage.removeItem('bingo_current_game');
         }
 
         function sendPendingEmail() {
@@ -167,6 +179,13 @@
             if(!pending) return;
             emailjs.send("service_lgyn3eh", "template_jkoq9mx", JSON.parse(pending))
                 .then(() => localStorage.removeItem('pending_email'));
+        }
+
+        function confirmReset() {
+            if(confirm("Naozaj začať novú hru?")) {
+                localStorage.removeItem('bingo_current_game');
+                location.reload();
+            }
         }
 
         initApp();
