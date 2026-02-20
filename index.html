@@ -2,54 +2,44 @@
 <html lang="sk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kúkovské AI Bingo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <title>Kúkovské Bingo APP</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         :root { --main-color: #2c3e50; --win-color: #27ae60; --bg-color: #eef2f3; }
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: var(--bg-color); margin: 0; padding: 10px; }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: var(--bg-color); margin: 0; padding: 10px; -webkit-user-select: none; }
         #setup-screen { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 500px; margin: auto; padding: 10px; }
-        .cell { aspect-ratio: 1; border: 2px solid var(--main-color); background: white; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; position: relative; overflow: hidden; font-weight: bold; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .cell img { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; opacity: 0.9; }
+        .cell { aspect-ratio: 1; border: 2px solid var(--main-color); background: white; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; position: relative; overflow: hidden; font-weight: bold; border-radius: 8px; }
+        .cell img { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
         .cell span { z-index: 2; background: rgba(255,255,255,0.8); padding: 2px 4px; border-radius: 3px; text-transform: uppercase; }
         .completed { border-color: var(--win-color); background: #d4edda; pointer-events: none; }
-        #status { margin: 10px; padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; min-height: 50px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        #status { margin: 10px; padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; min-height: 50px; display: flex; align-items: center; justify-content: center; }
         #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); color: #f1c40f; z-index: 200; align-items: center; justify-content: center; flex-direction: column; font-size: 40px; font-weight: bold; }
-        input[type="text"] { padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; border: 2px solid #ddd; width: 80%; max-width: 300px; }
-        button { padding: 12px 30px; font-size: 18px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 5px; }
-        .admin-btn { background: #7f8c8d; font-size: 11px; margin-top: 40px; opacity: 0.6; }
-        #admin-panel { margin-top: 30px; padding: 20px; background: white; border-radius: 10px; display: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        input[type="text"] { padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; border: 2px solid #ddd; width: 80%; }
+        button { padding: 12px 30px; font-size: 18px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="setup-screen">
-        <h1 style="color: var(--main-color);">📍 Kúkovské Bingo</h1>
-        <p>Zadaj meno a nájdi 5 v rade!</p>
-        <input type="text" id="player-name" placeholder="Tvoje meno / prezývka">
+        <h1>📍 Kúkovské Bingo</h1>
+        <input type="text" id="player-name" placeholder="Tvoje meno">
         <button onclick="startGame()">SPUSTIŤ HRU</button>
-        <p id="load-msg" style="font-size: 12px; color: #7f8c8d; margin-top: 20px;">Pripravujem AI senzory...</p>
+        <p id="load-msg">Načítavam AI...</p>
     </div>
 
-    <div id="status">Načítavam AI...</div>
+    <div id="status">Pripravený...</div>
     <div class="grid" id="board"></div>
 
     <div id="overlay">
         <span>BINGO! 🏆</span>
-        <div style="font-size: 18px; color: white; margin-top: 20px;" id="final-stats"></div>
-        <p style="font-size: 12px; color: #aaa; margin-top: 30px;">Zatvor stránku pre koniec alebo refreshni pre novú hru.</p>
-    </div>
-
-    <button onclick="toggleAdmin()" class="admin-btn">Admin Panel</button>
-    
-    <div id="admin-panel">
-        <h3>Rebríček (Miestne uložené)</h3>
-        <div id="leaderboard"></div>
+        <div id="final-stats" style="font-size: 20px; color: white;"></div>
+        <button onclick="localStorage.removeItem('bingo_current_game'); location.reload();" style="margin-top:20px; font-size:14px;">RESET HRY</button>
     </div>
 
     <script>
@@ -59,154 +49,127 @@
         let playerName = "";
         let startTime;
         let isGameOver = false;
+        let gameState = [];
 
         const bingoData = [
-            { sk: "Hydrant", en: ["fire hydrant"] },
-            { sk: "Mačka", en: ["cat", "tabby"] },
-            { sk: "Kríž", en: ["crucifix", "cross"] },
-            { sk: "Značka prechod", en: ["street sign", "traffic light"] },
-            { sk: "Zelená bedňa", en: ["ashcan", "trash can", "garbage", "dustbin"] },
-            { sk: "Vedro", en: ["bucket", "pail"] },
-            { sk: "Biela Audi", en: ["car", "vehicle"] },
-            { sk: "Nedostavaný dom", en: ["structure", "building"] },
-            { sk: "Lopata", en: ["shovel"] },
-            { sk: "Živý plot", en: ["hedge", "fence"] },
-            { sk: "Zelený plot", en: ["fence"] },
-            { sk: "Žlté auto", en: ["car"] },
-            { sk: "Fúrik", en: ["barrow", "wheelbarrow"] },
-            { sk: "Dymiaci komín", en: ["chimney", "conduit"] },
-            { sk: "Bicykel", en: ["bicycle", "bike", "mountain bike"] },
-            { sk: "Lavička", en: ["park bench", "bench"] },
-            { sk: "Ihličnan", en: ["spruce", "conifer", "tree"] },
-            { sk: "Hovno", en: ["poop", "feces"] },
-            { sk: "Traktor", en: ["tractor", "thresher"] },
-            { sk: "Schody", en: ["stairs", "staircase"] },
-            { sk: "Sliepka", en: ["hen", "chicken"] },
-            { sk: "Schránka", en: ["mailbox", "postbox", "can"] },
-            { sk: "Strecha", en: ["tile roof", "rooftop"] },
-            { sk: "Futbalová brána", en: ["net", "goal"] },
-            { sk: "Pneumatika", en: ["tire", "wheel"] }
+            { id: 1, sk: "Hydrant", en: ["fire hydrant"] }, { id: 2, sk: "Mačka", en: ["cat"] },
+            { id: 3, sk: "Kríž", en: ["crucifix", "cross"] }, { id: 4, sk: "Prechod", en: ["street sign"] },
+            { id: 5, sk: "Zel. bedňa", en: ["trash can", "garbage"] }, { id: 6, sk: "Vedro", en: ["bucket"] },
+            { id: 7, sk: "Biela Audi", en: ["car"] }, { id: 8, sk: "Nedostavaný", en: ["structure"] },
+            { id: 9, sk: "Lopata", en: ["shovel"] }, { id: 10, sk: "Živý plot", en: ["hedge"] },
+            { id: 11, sk: "Zelený plot", en: ["fence"] }, { id: 12, sk: "Žlté auto", en: ["car"] },
+            { id: 13, sk: "Fúrik", en: ["barrow"] }, { id: 14, sk: "Komín", en: ["chimney"] },
+            { id: 15, sk: "Bicykel", en: ["bicycle"] }, { id: 16, sk: "Lavička", en: ["bench"] },
+            { id: 17, sk: "Ihličnan", en: ["tree"] }, { id: 18, sk: "Hovno", en: ["poop"] },
+            { id: 19, sk: "Traktor", en: ["tractor"] }, { id: 20, sk: "Schody", en: ["stairs"] },
+            { id: 21, sk: "Sliepka", en: ["hen"] }, { id: 22, sk: "Schránka", en: ["mailbox"] },
+            { id: 23, sk: "Strecha", en: ["roof"] }, { id: 24, sk: "Brána", en: ["net"] },
+            { id: 25, sk: "Pneumatika", en: ["tire"] }
         ];
 
         async function initApp() {
-            try {
-                model = await mobilenet.load();
-                document.getElementById('load-msg').innerText = "✅ AI Mozog pripravený!";
-                
-                // PREDVYPLNENIE MENA, ak existuje v pamäti
-                const savedName = localStorage.getItem('bingo_user_identity');
-                if (savedName) {
-                    document.getElementById('player-name').value = savedName;
-                }
-            } catch (e) { document.getElementById('status').innerText = "❌ Chyba pri načítaní."; }
+            model = await mobilenet.load();
+            document.getElementById('load-msg').innerText = "✅ AI Ready";
+            const savedIdentity = localStorage.getItem('bingo_user_identity');
+            if(savedIdentity) document.getElementById('player-name').value = savedIdentity;
+            
+            // OBRYSOVÁ LOGIKA REŠTARTU:
+            const savedGame = localStorage.getItem('bingo_current_game');
+            if(savedGame) {
+                const data = JSON.parse(savedGame);
+                playerName = data.playerName;
+                startTime = new Date(data.startTime);
+                gameState = data.gameState;
+                document.getElementById('setup-screen').style.display = 'none';
+                renderBoard(true);
+                setInterval(autoSave, 5000);
+                setInterval(sendPendingEmail, 30000);
+            }
         }
 
         function startGame() {
             playerName = document.getElementById('player-name').value.trim();
-            if (!playerName) { alert("Zadaj meno!"); return; }
-            
-            // Uloženie mena do pamäte pre nabudúce
+            if(!playerName) return alert("Meno!");
             localStorage.setItem('bingo_user_identity', playerName);
-            
-            document.getElementById('setup-screen').style.display = 'none';
             startTime = new Date();
-            createBoard();
-            document.getElementById('status').innerText = `Hráč: ${playerName}`;
-            setInterval(sendPendingEmail, 30000); 
+            gameState = bingoData.sort(() => Math.random() - 0.5).map(item => ({...item, done: false, img: null}));
+            document.getElementById('setup-screen').style.display = 'none';
+            renderBoard();
+            setInterval(autoSave, 5000);
+            setInterval(sendPendingEmail, 30000);
         }
 
-        function createBoard() {
+        function renderBoard(isResume = false) {
             const board = document.getElementById('board');
             board.innerHTML = "";
-            const shuffled = [...bingoData].sort(() => Math.random() - 0.5);
-            shuffled.forEach((item) => {
+            gameState.forEach((item, index) => {
                 const cell = document.createElement('div');
-                cell.className = 'cell';
+                cell.className = 'cell' + (item.done ? ' completed' : '');
                 cell.innerHTML = `<span>${item.sk}</span>`;
+                if(item.img) cell.innerHTML += `<img src="${item.img}">`;
+                
                 const input = document.createElement('input');
                 input.type = 'file'; input.accept = 'image/*'; input.capture = 'camera'; input.style.display = 'none';
-                cell.onclick = () => { if(!isGameOver) input.click(); };
+                cell.onclick = () => input.click();
+                
                 input.onchange = async (e) => {
                     const file = e.target.files[0];
-                    if (!file) return;
+                    if(!file) return;
                     document.getElementById('status').innerText = "🔍 AI skúma...";
-                    const url = URL.createObjectURL(file);
-                    const img = new Image(); img.src = url;
-                    img.onload = async () => {
-                        const predictions = await model.classify(img);
-                        const found = predictions.some(p => p.probability > 0.1 && item.en.some(k => p.className.toLowerCase().includes(k)));
-                        if (found) {
-                            cell.classList.add('completed');
-                            cell.innerHTML += `<img src="${url}">`;
-                            document.getElementById('status').innerText = `🎯 Bingo! Máš ${item.sk}!`;
-                            checkBingo();
-                        } else {
-                            const guess = predictions[0].className.split(',')[0];
-                            document.getElementById('status').innerText = `❌ AI vidí: ${guess}`;
-                        }
+                    const reader = new FileReader();
+                    reader.onload = async (event) => {
+                        const imgData = event.target.result;
+                        const img = new Image(); img.src = imgData;
+                        img.onload = async () => {
+                            const preds = await model.classify(img);
+                            if(preds.some(p => p.probability > 0.1 && item.en.some(k => p.className.toLowerCase().includes(k)))) {
+                                item.done = true; item.img = imgData;
+                                cell.classList.add('completed');
+                                cell.innerHTML += `<img src="${imgData}">`;
+                                checkBingo();
+                            } else {
+                                document.getElementById('status').innerText = "❌ Skús iný uhol!";
+                            }
+                        };
                     };
+                    reader.readAsDataURL(file);
                 };
                 board.appendChild(cell);
             });
+            document.getElementById('status').innerText = `Hráč: ${playerName}`;
+        }
+
+        function autoSave() {
+            if(isGameOver) return;
+            localStorage.setItem('bingo_current_game', JSON.stringify({
+                playerName, startTime, gameState
+            }));
         }
 
         function checkBingo() {
-            const cells = document.querySelectorAll('.cell');
-            const states = Array.from(cells).map(c => c.classList.contains('completed'));
-            const lines = [
-                [0,1,2,3,4], [5,6,7,8,9], [10,11,12,13,14], [15,16,17,18,19], [20,21,22,23,24],
-                [0,5,10,15,20], [1,6,11,16,21], [2,7,12,17,22], [3,8,13,18,23], [4,9,14,19,24],
-                [0,6,12,18,24], [4,8,12,16,20]
-            ];
-            if (lines.some(line => line.every(idx => states[idx]))) endGame();
+            const states = gameState.map(i => i.done);
+            const lines = [[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];
+            if(lines.some(l => l.every(idx => states[idx]))) endGame();
         }
 
         function endGame() {
             isGameOver = true;
-            const endTime = new Date();
-            const diff = Math.floor((endTime - startTime) / 1000);
+            const diff = Math.floor((new Date() - startTime) / 1000);
             const timeStr = `${Math.floor(diff/60)}m ${diff%60}s`;
-            document.getElementById('final-stats').innerText = `Hráč: ${playerName}\nČas: ${timeStr}`;
+            document.getElementById('final-stats').innerText = `Čas: ${timeStr}`;
             document.getElementById('overlay').style.display = 'flex';
-
-            let results = JSON.parse(localStorage.getItem('bingo_results') || "[]");
-            results.push({ name: playerName, time: timeStr, seconds: diff });
-            localStorage.setItem('bingo_results', JSON.stringify(results));
-
-            localStorage.setItem('pending_email', JSON.stringify({
-                player_name: playerName,
-                name: playerName,
-                time: timeStr,
-                message: "Výsledok odoslaný z terénu."
-            }));
+            localStorage.setItem('pending_email', JSON.stringify({ player_name: playerName, name: playerName, time: timeStr, message: "Bingo z APP verzie!" }));
             sendPendingEmail();
         }
 
         function sendPendingEmail() {
             const pending = localStorage.getItem('pending_email');
-            if (!pending) return;
-            const data = JSON.parse(pending);
-            emailjs.send("service_lgyn3eh", "template_jkoq9mx", data)
-                .then(() => { localStorage.removeItem('pending_email'); })
-                .catch(() => { console.log("Pokus o odoslanie (offline)..."); });
-        }
-
-        function toggleAdmin() {
-            const panel = document.getElementById('admin-panel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-            if(panel.style.display === 'block') updateLeaderboard();
-        }
-
-        function updateLeaderboard() {
-            let results = JSON.parse(localStorage.getItem('bingo_results') || "[]");
-            results.sort((a, b) => a.seconds - b.seconds);
-            let html = "<table><tr><th>Meno</th><th>Čas</th></tr>";
-            results.forEach(r => html += `<tr><td>${r.name}</td><td>${r.time}</td></tr>`);
-            document.getElementById('leaderboard').innerHTML = html + "</table>";
+            if(!pending) return;
+            emailjs.send("service_lgyn3eh", "template_jkoq9mx", JSON.parse(pending))
+                .then(() => localStorage.removeItem('pending_email'));
         }
 
         initApp();
     </script>
 </body>
 </html>
-
