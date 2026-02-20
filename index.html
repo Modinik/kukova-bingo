@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kúkovské AI Bingo - Super Citlivá Verzia</title>
+    <title>Kúkovské AI Bingo</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -16,10 +16,11 @@
         .cell img { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; opacity: 0.9; }
         .cell span { z-index: 2; background: rgba(255,255,255,0.8); padding: 2px 4px; border-radius: 3px; text-transform: uppercase; }
         .completed { border-color: var(--win-color); background: #d4edda; pointer-events: none; }
-        #status { margin: 10px; padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; min-height: 50px; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 1.2; }
+        #status { margin: 10px; padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; min-height: 50px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
         #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); color: #f1c40f; z-index: 200; align-items: center; justify-content: center; flex-direction: column; font-size: 40px; font-weight: bold; }
         input[type="text"] { padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; border: 2px solid #ddd; width: 80%; max-width: 300px; }
         button { padding: 12px 30px; font-size: 18px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 5px; }
+        .admin-btn { background: #7f8c8d; font-size: 11px; margin-top: 40px; opacity: 0.6; }
         #admin-panel { margin-top: 30px; padding: 20px; background: white; border-radius: 10px; display: none; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
@@ -35,32 +36,30 @@
         <p id="load-msg" style="font-size: 12px; color: #7f8c8d; margin-top: 20px;">Pripravujem AI senzory...</p>
     </div>
 
-    <div id="status">Pripravený na štart...</div>
+    <div id="status">Načítavam AI...</div>
     <div class="grid" id="board"></div>
 
     <div id="overlay">
         <span>BINGO! 🏆</span>
         <div style="font-size: 18px; color: white; margin-top: 20px;" id="final-stats"></div>
+        <p style="font-size: 12px; color: #aaa; margin-top: 30px;">Zatvor stránku pre koniec alebo refreshni pre novú hru.</p>
     </div>
 
-    <button onclick="toggleAdmin()" style="background: #7f8c8d; font-size: 12px; margin-top: 40px;">Zobraziť tabuľku výsledkov</button>
+    <button onclick="toggleAdmin()" class="admin-btn">Admin Panel</button>
+    
     <div id="admin-panel">
-        <h3>Rebríček hráčov</h3>
+        <h3>Rebríček (Miestne uložené)</h3>
         <div id="leaderboard"></div>
     </div>
 
     <script>
-        // --- KONFIGURÁCIA EMAILJS ---
-        (function(){
-            emailjs.init("6gKohTkcBCwR_zjq6");
-        })();
+        (function(){ emailjs.init("6gKohTkcBCwR_zjq6"); })();
 
         let model;
         let playerName = "";
         let startTime;
         let isGameOver = false;
 
-        // --- AKTUALIZOVANÝ ZOZNAM PREDMETOV ---
         const bingoData = [
             { sk: "Hydrant", en: ["fire hydrant"] },
             { sk: "Mačka", en: ["cat", "tabby"] },
@@ -69,79 +68,81 @@
             { sk: "Zelená bedňa", en: ["ashcan", "trash can", "garbage", "dustbin"] },
             { sk: "Vedro", en: ["bucket", "pail"] },
             { sk: "Biela Audi", en: ["car", "vehicle"] },
-            { sk: "Nedostavaný dom", en: ["structure", "scaffolding", "building"] },
+            { sk: "Nedostavaný dom", en: ["structure", "building"] },
             { sk: "Lopata", en: ["shovel"] },
-            { sk: "Živý plot", en: ["picket fence", "hedge"] },
+            { sk: "Živý plot", en: ["hedge", "fence"] },
             { sk: "Zelený plot", en: ["fence"] },
             { sk: "Žlté auto", en: ["car"] },
-            { sk: "Kopa dreva", en: ["lumber", "log"] },
-            { sk: "Dymiaci komín", en: ["chimney"] },
-            { sk: "Sneh", en: ["snow", "ice", "white"] },
+            { sk: "Fúrik", en: ["barrow", "wheelbarrow"] },
+            { sk: "Dymiaci komín", en: ["chimney", "conduit"] },
+            { sk: "Bicykel", en: ["bicycle", "bike", "mountain bike"] },
             { sk: "Lavička", en: ["park bench", "bench"] },
             { sk: "Ihličnan", en: ["spruce", "conifer", "tree"] },
             { sk: "Hovno", en: ["poop", "feces"] },
             { sk: "Traktor", en: ["tractor", "thresher"] },
-            { sk: "Schody", en: ["stairs", "staircase", "banister"] },
-            { sk: "Sliepka", en: ["hen", "chicken", "cock"] },
+            { sk: "Schody", en: ["stairs", "staircase"] },
+            { sk: "Sliepka", en: ["hen", "chicken"] },
             { sk: "Schránka", en: ["mailbox", "postbox", "can"] },
             { sk: "Strecha", en: ["tile roof", "rooftop"] },
             { sk: "Futbalová brána", en: ["net", "goal"] },
             { sk: "Pneumatika", en: ["tire", "wheel"] }
         ];
 
-        async function initAI() {
+        async function initApp() {
             try {
                 model = await mobilenet.load();
                 document.getElementById('load-msg').innerText = "✅ AI Mozog pripravený!";
-            } catch (e) { document.getElementById('load-msg').innerText = "❌ Chyba AI."; }
+                
+                // PREDVYPLNENIE MENA, ak existuje v pamäti
+                const savedName = localStorage.getItem('bingo_user_identity');
+                if (savedName) {
+                    document.getElementById('player-name').value = savedName;
+                }
+            } catch (e) { document.getElementById('status').innerText = "❌ Chyba pri načítaní."; }
         }
 
         function startGame() {
             playerName = document.getElementById('player-name').value.trim();
             if (!playerName) { alert("Zadaj meno!"); return; }
+            
+            // Uloženie mena do pamäte pre nabudúce
+            localStorage.setItem('bingo_user_identity', playerName);
+            
             document.getElementById('setup-screen').style.display = 'none';
             startTime = new Date();
             createBoard();
             document.getElementById('status').innerText = `Hráč: ${playerName}`;
+            setInterval(sendPendingEmail, 30000); 
         }
 
         function createBoard() {
             const board = document.getElementById('board');
+            board.innerHTML = "";
             const shuffled = [...bingoData].sort(() => Math.random() - 0.5);
-            shuffled.forEach((item, index) => {
+            shuffled.forEach((item) => {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
                 cell.innerHTML = `<span>${item.sk}</span>`;
-                
                 const input = document.createElement('input');
                 input.type = 'file'; input.accept = 'image/*'; input.capture = 'camera'; input.style.display = 'none';
                 cell.onclick = () => { if(!isGameOver) input.click(); };
-                
                 input.onchange = async (e) => {
                     const file = e.target.files[0];
                     if (!file) return;
-                    document.getElementById('status').innerText = "🔍 AI skúma fotku...";
+                    document.getElementById('status').innerText = "🔍 AI skúma...";
                     const url = URL.createObjectURL(file);
                     const img = new Image(); img.src = url;
                     img.onload = async () => {
                         const predictions = await model.classify(img);
-                        
-                        // KROK 1: Extrémne nízka hranica 0.1 (10%)
-                        // KROK 2: Rozšírené kľúčové slová v poli "en" vyššie
-                        const found = predictions.some(p => 
-                            p.probability > 0.1 && 
-                            item.en.some(k => p.className.toLowerCase().includes(k))
-                        );
-
+                        const found = predictions.some(p => p.probability > 0.1 && item.en.some(k => p.className.toLowerCase().includes(k)));
                         if (found) {
                             cell.classList.add('completed');
                             cell.innerHTML += `<img src="${url}">`;
-                            document.getElementById('status').innerText = `🎯 Bingo! To je ${item.sk}!`;
+                            document.getElementById('status').innerText = `🎯 Bingo! Máš ${item.sk}!`;
                             checkBingo();
                         } else {
-                            // KROK 3: DEBUG MÓD - vypíše, čo AI vidí
-                            const aiGuess = predictions[0].className.split(',')[0];
-                            document.getElementById('status').innerText = `❌ Nie je to ${item.sk}.\nAI si myslí: ${aiGuess}`;
+                            const guess = predictions[0].className.split(',')[0];
+                            document.getElementById('status').innerText = `❌ AI vidí: ${guess}`;
                         }
                     };
                 };
@@ -165,20 +166,29 @@
             const endTime = new Date();
             const diff = Math.floor((endTime - startTime) / 1000);
             const timeStr = `${Math.floor(diff/60)}m ${diff%60}s`;
-            
-            document.getElementById('final-stats').innerText = `Hráč: ${playerName} | Čas: ${timeStr}`;
+            document.getElementById('final-stats').innerText = `Hráč: ${playerName}\nČas: ${timeStr}`;
             document.getElementById('overlay').style.display = 'flex';
 
             let results = JSON.parse(localStorage.getItem('bingo_results') || "[]");
             results.push({ name: playerName, time: timeStr, seconds: diff });
             localStorage.setItem('bingo_results', JSON.stringify(results));
 
-            emailjs.send("service_lgyn3eh", "template_jkoq9mx", {
+            localStorage.setItem('pending_email', JSON.stringify({
                 player_name: playerName,
                 name: playerName,
                 time: timeStr,
-                message: "Hra úspešne dokončená v teréne!"
-            });
+                message: "Výsledok odoslaný z terénu."
+            }));
+            sendPendingEmail();
+        }
+
+        function sendPendingEmail() {
+            const pending = localStorage.getItem('pending_email');
+            if (!pending) return;
+            const data = JSON.parse(pending);
+            emailjs.send("service_lgyn3eh", "template_jkoq9mx", data)
+                .then(() => { localStorage.removeItem('pending_email'); })
+                .catch(() => { console.log("Pokus o odoslanie (offline)..."); });
         }
 
         function toggleAdmin() {
@@ -195,7 +205,7 @@
             document.getElementById('leaderboard').innerHTML = html + "</table>";
         }
 
-        initAI();
+        initApp();
     </script>
 </body>
 </html>
