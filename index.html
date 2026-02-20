@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kúkovské AI Bingo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+    <style>
+        :root { --main-color: #2c3e50; --win-color: #27ae60; }
+        body { font-family: sans-serif; text-align: center; background: #eef2f3; margin: 0; padding: 10px; }
+        #setup-screen { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; max-width: 500px; margin: auto; }
+        .cell { aspect-ratio: 1; border: 2px solid var(--main-color); background: white; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; position: relative; overflow: hidden; font-weight: bold; border-radius: 5px; }
+        .cell img { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; opacity: 0.8; }
+        .cell span { z-index: 2; background: rgba(255,255,255,0.7); padding: 2px; }
+        .completed { border-color: var(--win-color); background: #d4edda; pointer-events: none; }
+        #status { margin: 15px; padding: 10px; background: var(--main-color); color: white; border-radius: 5px; }
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); color: gold; z-index: 200; align-items: center; justify-content: center; flex-direction: column; font-size: 40px; font-weight: bold; }
+        input { padding: 10px; font-size: 16px; margin: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; font-size: 16px; background: var(--win-color); color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen">
+        <h1>📍 Kúkovské Bingo</h1>
+        <input type="text" id="player-name" placeholder="Zadaj svoje meno">
+        <button onclick="startGame()">ŠTART</button>
+        <p id="load-msg">Načítavam AI mozog...</p>
+    </div>
+
+    <div id="status">Priprav sa...</div>
+    <div class="grid" id="board"></div>
+
+    <div id="overlay">
+        <span>BINGO!</span>
+        <div style="font-size: 18px; color: white;" id="final-stats"></div>
+    </div>
+
+    <script>
+        let model;
+        let playerName = "";
+        let startTime;
+        let isGameOver = false;
+        const bingoData = [
+            { sk: "Hydrant", en: "fire hydrant" }, { sk: "Mačka", en: "cat" },
+            { sk: "Kríž", en: "cross" }, { sk: "Prechod", en: "street sign" },
+            { sk: "Žltý kôš", en: "ashcan" }, { sk: "Sivý dom", en: "house" },
+            { sk: "Biela Audi", en: "car" }, { sk: "Značka 12t", en: "street sign" },
+            { sk: "Drevený dom", en: "lodge" }, { sk: "Živý plot", en: "picket fence" },
+            { sk: "Čierna brána", en: "gate" }, { sk: "Žlté auto", en: "car" },
+            { sk: "Kopa dreva", en: "lumber" }, { sk: "Dymiaci komín", en: "chimney" },
+            { sk: "Snehová kopa", en: "snow" }, { sk: "Lavička", en: "park bench" },
+            { sk: "Ihličnan", en: "spruce" }, { sk: "Lampa", en: "street lamp" },
+            { sk: "Studňa", en: "well" }, { sk: "Zvyšok snehu", en: "snow" },
+            { sk: "Schody", en: "stairs" }, { sk: "Sliepka", en: "hen" },
+            { sk: "Schránka", en: "mailbox" }, { sk: "Červená strecha", en: "tile roof" },
+            { sk: "Bránka", en: "net" }
+        ];
+
+        async function initAI() {
+            model = await mobilenet.load();
+            document.getElementById('load-msg').innerText = "✅ AI Pripravená!";
+        }
+
+        function startGame() {
+            playerName = document.getElementById('player-name').value.trim();
+            if (!playerName) { alert("Prosím, zadaj svoje meno!"); return; }
+            document.getElementById('setup-screen').style.display = 'none';
+            startTime = new Date();
+            createBoard();
+            document.getElementById('status').innerText = `Hráč: ${playerName} | Čas beží!`;
+        }
+
+        function createBoard() {
+            const board = document.getElementById('board');
+            const shuffled = [...bingoData].sort(() => Math.random() - 0.5);
+            shuffled.forEach((item, index) => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.id = `cell-${index}`;
+                cell.innerHTML = `<span>${item.sk}</span>`;
+                
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.capture = 'camera';
+                input.style.display = 'none';
+                
+                cell.onclick = () => { if(!isGameOver) input.click(); };
+                
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    document.getElementById('status').innerText = "🔎 AI analyzuje...";
+                    const url = URL.createObjectURL(file);
+                    const img = new Image();
+                    img.src = url;
+                    img.onload = async () => {
+                        const predictions = await model.classify(img);
+                        const found = predictions.some(p => p.probability > 0.3 && p.className.toLowerCase().includes(item.en));
+                        
+                        if (found) {
+                            cell.classList.add('completed');
+                            cell.innerHTML += `<img src="${url}">`;
+                            document.getElementById('status').innerText = `✅ Skvelé, ${playerName}!`;
+                            checkBingo();
+                        } else {
+                            document.getElementById('status').innerText = `❌ To nevyzerá ako ${item.sk}. Skús znova!`;
+                        }
+                    };
+                };
+                board.appendChild(cell);
+            });
+        }
+
+        function checkBingo() {
+            const cells = document.querySelectorAll('.cell');
+            const states = Array.from(cells).map(c => c.classList.contains('completed'));
+            
+            const lines = [
+                [0,1,2,3,4], [5,6,7,8,9], [10,11,12,13,14], [15,16,17,18,19], [20,21,22,23,24], // Riadky
+                [0,5,10,15,20], [1,6,11,16,21], [2,7,12,17,22], [3,8,13,18,23], [4,9,14,19,24], // Stĺpce
+                [0,6,12,18,24], [4,8,12,16,20] // Uhlopriečky
+            ];
+
+            if (lines.some(line => line.every(index => states[index]))) {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            isGameOver = true;
+            const endTime = new Date();
+            const duration = Math.floor((endTime - startTime) / 1000);
+            const minutes = Math.floor(duration / 60);
+            const seconds = duration % 60;
+            
+            const statsText = `Meno: ${playerName} | Čas: ${minutes}m ${seconds}s`;
+            document.getElementById('final-stats').innerText = statsText;
+            document.getElementById('overlay').style.display = 'flex';
+            
+            // Uloženie do pamäte (offline log)
+            localStorage.setItem('bingo_result', JSON.stringify({
+                player: playerName,
+                time: statsText,
+                timestamp: endTime
+            }));
+
+            // Tu sa neskôr pridá funkcia na odoslanie tebe
+            console.log("Výsledok pripravený na odoslanie:", statsText);
+        }
+
+        initAI();
+    </script>
+</body>
+</html>
