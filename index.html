@@ -23,7 +23,6 @@
         input[type="text"] { padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; border: 2px solid #ddd; width: 80%; max-width: 300px; }
         button { padding: 12px 30px; font-size: 18px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         button:disabled { background: #bdc3c7; cursor: not-allowed; }
-        .admin-btn { background: #7f8c8d; font-size: 11px; margin-top: 40px; opacity: 0.6; }
     </style>
 </head>
 <body>
@@ -57,9 +56,9 @@
 
         const bingoData = [
             { id: 1, sk: "Hydrant", en: ["fire hydrant"] }, { id: 2, sk: "Mačka", en: ["cat", "tabby"] },
-            { id: 3, sk: "Kríž", en: ["crucifix", "cross"] }, { id: 4, sk: "Značka Prechod", en: ["street sign", "traffic light", "signboard"] },
+            { id: 3, sk: "Kríž", en: ["crucifix", "cross"] }, { id: 4, sk: "Značka prechodu", en: ["street sign", "traffic light", "signboard"] },
             { id: 5, sk: "Zel. bedňa", en: ["trash can", "garbage", "ashcan"] }, { id: 6, sk: "Vedro", en: ["bucket", "pail"] },
-            { id: 7, sk: "Biela Audi", en: ["car", "vehicle"] }, { id: 8, sk: "Nedostavaný", en: ["structure", "building"] },
+            { id: 7, sk: "Biela Audi", en: ["car", "vehicle"] }, { id: 8, sk: "Nedostavaný dom", en: ["structure", "building"] },
             { id: 9, sk: "Lopata", en: ["shovel"] }, { id: 10, sk: "Živý plot", en: ["hedge", "fence"] },
             { id: 11, sk: "Zelený plot", en: ["fence"] }, { id: 12, sk: "Žlté auto", en: ["car"] },
             { id: 13, sk: "Fúrik", en: ["barrow", "wheelbarrow"] }, { id: 14, sk: "Komín", en: ["chimney", "conduit"] },
@@ -101,10 +100,6 @@
             playerName = document.getElementById('player-name').value.trim();
             if(!playerName) {
                 alert("Najprv zadaj svoje meno!");
-                return;
-            }
-            if(!aiReady) {
-                alert("Počkaj, AI sa ešte nabíja...");
                 return;
             }
             localStorage.setItem('bingo_user_identity', playerName);
@@ -151,8 +146,7 @@
                         img.onload = async () => {
                             const preds = await model.classify(img);
                             const found = preds.some(p => p.probability > 0.1 && item.en.some(k => p.className.toLowerCase().includes(k)));
-                            
-                            const bestGuess = preds[0].className.split(',')[0]; // Prvý odhad AI
+                            const bestGuess = preds[0].className.split(',')[0];
                             
                             if(found) {
                                 item.done = true; item.img = imgData;
