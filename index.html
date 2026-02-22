@@ -22,6 +22,7 @@
         #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); color: #f1c40f; z-index: 200; align-items: center; justify-content: center; flex-direction: column; font-size: 40px; font-weight: bold; }
         input[type="text"] { padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; border: 2px solid #ddd; width: 80%; max-width: 300px; }
         button { padding: 12px 30px; font-size: 18px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:disabled { background: #bdc3c7; cursor: not-allowed; }
         .admin-btn { background: #7f8c8d; font-size: 11px; margin-top: 40px; opacity: 0.6; }
     </style>
 </head>
@@ -31,8 +32,8 @@
         <h1 style="color: var(--main-color);">📍 Kúkovské Bingo</h1>
         <p>Zadaj meno a nájdi 5 v rade!</p>
         <input type="text" id="player-name" placeholder="Tvoje meno">
-        <button onclick="startGame()">SPUSTIŤ HRU</button>
-        <p id="load-msg" style="font-size: 12px; color: #7f8c8d; margin-top: 20px;">Pripravujem AI senzory...</p>
+        <button id="start-btn" onclick="startGame()" disabled>ČAKÁM NA AI...</button>
+        <p id="load-msg" style="font-size: 12px; color: #7f8c8d; margin-top: 20px;">Pripravujem AI mozog...</p>
     </div>
 
     <div id="status">Pripravujem hru...</div>
@@ -44,12 +45,6 @@
         <button style="margin-top:20px; font-size:14px; background:#e67e22;" onclick="confirmReset()">NOVÁ HRA</button>
     </div>
 
-    <button onclick="toggleAdmin()" class="admin-btn">Zobraziť tabuľku výsledkov</button>
-    <div id="admin-panel" style="display:none; background:white; margin-top:20px; padding:10px; border-radius:10px;">
-        <h3>Miestny rebríček</h3>
-        <div id="leaderboard"></div>
-    </div>
-
     <script>
         (function(){ emailjs.init("6gKohTkcBCwR_zjq6"); })();
 
@@ -58,10 +53,11 @@
         let startTime;
         let isGameOver = false;
         let gameState = [];
+        let aiReady = false;
 
         const bingoData = [
             { id: 1, sk: "Hydrant", en: ["fire hydrant"] }, { id: 2, sk: "Mačka", en: ["cat", "tabby"] },
-            { id: 3, sk: "Kríž", en: ["crucifix", "cross"] }, { id: 4, sk: "Prechod", en: ["street sign", "traffic light"] },
+            { id: 3, sk: "Kríž", en: ["crucifix", "cross"] }, { id: 4, sk: "Značka Prechod", en: ["street sign", "traffic light", "signboard"] },
             { id: 5, sk: "Zel. bedňa", en: ["trash can", "garbage", "ashcan"] }, { id: 6, sk: "Vedro", en: ["bucket", "pail"] },
             { id: 7, sk: "Biela Audi", en: ["car", "vehicle"] }, { id: 8, sk: "Nedostavaný", en: ["structure", "building"] },
             { id: 9, sk: "Lopata", en: ["shovel"] }, { id: 10, sk: "Živý plot", en: ["hedge", "fence"] },
@@ -71,14 +67,17 @@
             { id: 17, sk: "Ihličnan", en: ["tree", "conifer", "spruce"] }, { id: 18, sk: "Hovno", en: ["poop", "feces"] },
             { id: 19, sk: "Traktor", en: ["tractor"] }, { id: 20, sk: "Schody", en: ["stairs", "staircase"] },
             { id: 21, sk: "Sliepka", en: ["hen", "chicken"] }, { id: 22, sk: "Schránka", en: ["mailbox", "postbox"] },
-            { id: 23, sk: "Strecha", en: ["roof", "tile roof"] }, { id: 24, sk: "Brána", en: ["net", "goal"] },
+            { id: 23, sk: "Strecha", en: ["roof", "tile roof"] }, { id: 24, sk: "Brána", en: ["net", "goal", "gate"] },
             { id: 25, sk: "Pneumatika", en: ["tire", "wheel"] }
         ];
 
         async function initApp() {
             try {
                 model = await mobilenet.load();
-                document.getElementById('load-msg').innerText = "✅ AI Ready";
+                aiReady = true;
+                document.getElementById('load-msg').innerText = "✅ AI Mozog je pripravený!";
+                document.getElementById('start-btn').innerText = "SPUSTIŤ HRU";
+                document.getElementById('start-btn').disabled = false;
                 
                 const savedIdentity = localStorage.getItem('bingo_user_identity');
                 if(savedIdentity) document.getElementById('player-name').value = savedIdentity;
@@ -93,12 +92,21 @@
                     renderBoard();
                     startIntervals();
                 }
-            } catch (e) { document.getElementById('status').innerText = "❌ Chyba AI."; }
+            } catch (e) { 
+                document.getElementById('load-msg').innerText = "❌ Chyba pri načítaní AI."; 
+            }
         }
 
         function startGame() {
             playerName = document.getElementById('player-name').value.trim();
-            if(!playerName) return alert("Zadaj meno!");
+            if(!playerName) {
+                alert("Najprv zadaj svoje meno!");
+                return;
+            }
+            if(!aiReady) {
+                alert("Počkaj, AI sa ešte nabíja...");
+                return;
+            }
             localStorage.setItem('bingo_user_identity', playerName);
             startTime = new Date();
             gameState = bingoData.sort(() => Math.random() - 0.5).map(item => ({...item, done: false, img: null}));
@@ -123,12 +131,19 @@
                 
                 const input = document.createElement('input');
                 input.type = 'file'; input.accept = 'image/*'; input.capture = 'camera'; input.style.display = 'none';
-                cell.onclick = () => { if(!isGameOver) input.click(); };
+                
+                cell.onclick = () => { 
+                    if(!isGameOver) {
+                        alert("POZOR: Snaž sa, aby objekt zaberal čo najviac miesta na fotke a bol dobre osvetlený!");
+                        input.click(); 
+                    }
+                };
                 
                 input.onchange = async (e) => {
                     const file = e.target.files[0];
                     if(!file) return;
-                    document.getElementById('status').innerText = "🔍 AI skúma fotku...";
+                    document.getElementById('status').innerText = `🔍 AI skúma: ${item.sk}...`;
+                    
                     const reader = new FileReader();
                     reader.onload = async (ev) => {
                         const imgData = ev.target.result;
@@ -136,15 +151,17 @@
                         img.onload = async () => {
                             const preds = await model.classify(img);
                             const found = preds.some(p => p.probability > 0.1 && item.en.some(k => p.className.toLowerCase().includes(k)));
+                            
+                            const bestGuess = preds[0].className.split(',')[0]; // Prvý odhad AI
+                            
                             if(found) {
                                 item.done = true; item.img = imgData;
                                 cell.classList.add('completed');
                                 cell.innerHTML += `<img src="${imgData}">`;
-                                document.getElementById('status').innerText = `🎯 Bingo! To je ${item.sk}!`;
+                                document.getElementById('status').innerText = `🎯 Bingo! AI potvrdilo: ${item.sk}!`;
                                 checkBingo();
                             } else {
-                                const guess = preds[0].className.split(',')[0];
-                                document.getElementById('status').innerText = `❌ AI vidí: ${guess}`;
+                                document.getElementById('status').innerText = `❌ AI vidí: "${bestGuess}". Skús to znova!`;
                             }
                         };
                     };
@@ -156,7 +173,7 @@
         }
 
         function autoSave() {
-            if(!isGameOver) {
+            if(!isGameOver && gameState.length > 0) {
                 localStorage.setItem('bingo_current_game', JSON.stringify({ playerName, startTime, gameState }));
             }
         }
@@ -186,15 +203,6 @@
                 .then(() => localStorage.removeItem('pending_email'));
         }
 
-        function toggleAdmin() {
-            const panel = document.getElementById('admin-panel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-            if(panel.style.display === 'block') {
-                let res = JSON.parse(localStorage.getItem('bingo_results') || "[]");
-                document.getElementById('leaderboard').innerHTML = res.map(r => `<p>${r.name}: ${r.time}</p>`).join('');
-            }
-        }
-
         function confirmReset() {
             if(confirm("Naozaj začať odznova?")) {
                 localStorage.removeItem('bingo_current_game');
@@ -206,3 +214,4 @@
     </script>
 </body>
 </html>
+
