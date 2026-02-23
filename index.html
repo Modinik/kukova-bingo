@@ -104,6 +104,9 @@
                 return;
             }
 
+            // TU JE TÁ VAROVNÁ SPRÁVA - Zobrazí sa iba raz pri vstupe do hry
+            alert("RADA PRE HRÁČA: Aby AI správne uznalo tvoj úlovok, snaž sa, aby hľadaný objekt zaberal čo najviac miesta na fotke a bol dobre osvetlený!");
+
             const savedGame = localStorage.getItem('bingo_current_game');
             if(hasSavedGame && savedGame) {
                 const data = JSON.parse(savedGame);
@@ -138,12 +141,8 @@
                 const input = document.createElement('input');
                 input.type = 'file'; input.accept = 'image/*'; input.capture = 'camera'; input.style.display = 'none';
                 
-                cell.onclick = () => { 
-                    if(!isGameOver) {
-                        alert("POZOR: Snaž sa, aby objekt zaberal čo najviac miesta na fotke a bol dobre osvetlený!");
-                        input.click(); 
-                    }
-                };
+                // Teraz už len otvoríme kameru bez ďalšieho alertu
+                cell.onclick = () => { if(!isGameOver) input.click(); };
                 
                 input.onchange = async (e) => {
                     const file = e.target.files[0];
@@ -219,4 +218,3 @@
     </script>
 </body>
 </html>
-
