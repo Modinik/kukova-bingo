@@ -75,26 +75,19 @@
             try {
                 model = await mobilenet.load();
                 aiReady = true;
-                
                 const savedIdentity = localStorage.getItem('bingo_user_identity');
                 if(savedIdentity) document.getElementById('player-name').value = savedIdentity;
-                
                 const savedGame = localStorage.getItem('bingo_current_game');
                 const startBtn = document.getElementById('start-btn');
-                
                 if(savedGame) {
                     hasSavedGame = true;
                     startBtn.innerText = "POKRAČOVAŤ V HRE";
                 } else {
                     startBtn.innerText = "SPUSTIŤ HRU";
                 }
-
                 document.getElementById('load-msg').innerText = "✅ AI Mozog je pripravený!";
                 startBtn.disabled = false;
-
-            } catch (e) { 
-                document.getElementById('load-msg').innerText = "❌ Chyba pri načítaní AI."; 
-            }
+            } catch (e) { document.getElementById('load-msg').innerText = "❌ Chyba pri načítaní AI."; }
         }
 
         function startGame() {
@@ -104,8 +97,8 @@
                 return;
             }
 
-            // TU JE TÁ VAROVNÁ SPRÁVA - Zobrazí sa iba raz pri vstupe do hry
-            alert("RADA PRE HRÁČA: Aby AI správne uznalo tvoj úlovok, snaž sa, aby hľadaný objekt zaberal čo najviac miesta na fotke a bol dobre osvetlený!");
+            // TU JE JEDINÝ ALERT V CELOM KÓDE
+            alert("RADA: Snaž sa, aby objekt zaberal čo najviac miesta na fotke a bol dobre osvetlený!");
 
             const savedGame = localStorage.getItem('bingo_current_game');
             if(hasSavedGame && savedGame) {
@@ -118,7 +111,6 @@
                 startTime = new Date();
                 gameState = bingoData.sort(() => Math.random() - 0.5).map(item => ({...item, done: false, img: null}));
             }
-
             document.getElementById('setup-screen').style.display = 'none';
             renderBoard();
             startIntervals();
@@ -141,14 +133,13 @@
                 const input = document.createElement('input');
                 input.type = 'file'; input.accept = 'image/*'; input.capture = 'camera'; input.style.display = 'none';
                 
-                // Teraz už len otvoríme kameru bez ďalšieho alertu
+                // OPRAVA: Tu už nie je žiadny alert, len čisté kliknutie
                 cell.onclick = () => { if(!isGameOver) input.click(); };
                 
                 input.onchange = async (e) => {
                     const file = e.target.files[0];
                     if(!file) return;
                     document.getElementById('status').innerText = `🔍 AI skúma: ${item.sk}...`;
-                    
                     const reader = new FileReader();
                     reader.onload = async (ev) => {
                         const imgData = ev.target.result;
@@ -157,7 +148,6 @@
                             const preds = await model.classify(img);
                             const found = preds.some(p => p.probability > 0.1 && item.en.some(k => p.className.toLowerCase().includes(k)));
                             const bestGuess = preds[0].className.split(',')[0];
-                            
                             if(found) {
                                 item.done = true; item.img = imgData;
                                 cell.classList.add('completed');
@@ -194,7 +184,6 @@
             const timeStr = `${Math.floor(diff/60)}m ${diff%60}s`;
             document.getElementById('final-stats').innerText = `Tvoj čas: ${timeStr}`;
             document.getElementById('overlay').style.display = 'flex';
-            
             localStorage.setItem('pending_email', JSON.stringify({ player_name: playerName, name: playerName, time: timeStr, message: "Úspešné Bingo!" }));
             sendPendingEmail();
             localStorage.removeItem('bingo_current_game');
@@ -203,8 +192,7 @@
         function sendPendingEmail() {
             const pending = localStorage.getItem('pending_email');
             if(!pending) return;
-            emailjs.send("service_lgyn3eh", "template_jkoq9mx", JSON.parse(pending))
-                .then(() => localStorage.removeItem('pending_email'));
+            emailjs.send("service_lgyn3eh", "template_jkoq9mx", JSON.parse(pending)).then(() => localStorage.removeItem('pending_email'));
         }
 
         function confirmReset() {
