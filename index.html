@@ -34,14 +34,13 @@
         input[type="text"] { padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; border: 2px solid #ddd; width: 80%; max-width: 300px; }
         button { padding: 12px 30px; font-size: 18px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        /* --- UPRAVENÝ FOŤÁK --- */
+        /* --- FOŤÁK --- */
         #cameraOverlay { 
             position: fixed; inset: 0; background: #1a2535; z-index: 1000; 
             display: none; flex-direction: column; align-items: center; justify-content: space-between; 
             padding: 40px 20px; color: white;
         }
 
-        /* ŽLTÝ RÁMČEK PRE CIEL */
         .target-box { 
             border: 3px solid var(--accent); 
             background: rgba(241, 196, 15, 0.1); 
@@ -56,8 +55,6 @@
         .video-container { position: relative; width: 100%; max-width: 340px; aspect-ratio: 1; border-radius: 20px; overflow: hidden; border: 2px solid #444; }
         video { width: 100%; height: 100%; object-fit: cover; }
         
-        /* SCAN PÁSIK ODSTRÁNENÝ */
-
         #aiStatus { font-size: 14px; color: #bbb; min-height: 45px; margin-top: 10px; }
         #aiStatus b { color: var(--accent); }
 
@@ -116,20 +113,21 @@
     let isGameOver = false;
     let gameState = [];
 
+    // AKTUALIZOVANÝ ZOZNAM PREDMETOV
     const bingoData = [
         { sk: "Hydrant", en: ["fire hydrant"] }, { sk: "Mačka", en: ["cat", "tabby"] },
-        { sk: "Kríž", en: ["crucifix", "cross"] }, { sk: "Značka prechodu", en: ["street sign"] },
-        { sk: "Zel. bedňa", en: ["trash can", "garbage"] }, { sk: "Vedro", en: ["bucket", "pail"] },
-        { sk: "Lopata", en: ["shovel"] }, { sk: "Živý plot", en: ["hedge"] },
-        { sk: "Fúrik", en: ["barrow", "wheelbarrow"] }, { sk: "Komín", en: ["chimney"] },
-        { sk: "Bicykel", en: ["bicycle", "bike"] }, { sk: "Lavička", en: ["bench"] },
-        { sk: "Traktor", en: ["tractor"] }, { sk: "Schody", en: ["stairs"] },
-        { sk: "Sliepka", en: ["hen", "chicken"] }, { sk: "Schránka", en: ["mailbox", "postbox"] },
-        { sk: "Pneumatika", en: ["tire", "wheel"] }, { sk: "Brána", en: ["gate"] },
-        { sk: "Kladivo", en: ["hammer"] }, { sk: "Kosačka", en: ["mower"] },
-        { sk: "Sud", en: ["barrel"] }, { sk: "Metla", en: ["broom"] },
-        { sk: "Rebrík", en: ["ladder"] }, { sk: "Vlčiak", en: ["German shepherd", "dog"] },
-        { sk: "Kvetináč", en: ["pot", "flowerpot"] }
+        { sk: "Kríž", en: ["crucifix", "cross"] }, { sk: "Zel. bedňa", en: ["trash can", "garbage"] },
+        { sk: "Vedro", en: ["bucket", "pail"] }, { sk: "Lopata", en: ["shovel"] },
+        { sk: "Živý plot", en: ["hedge"] }, { sk: "Fúrik", en: ["barrow", "wheelbarrow"] },
+        { sk: "Komín", en: ["chimney"] }, { sk: "Bicykel", en: ["bicycle", "bike"] },
+        { sk: "Lavička", en: ["bench"] }, { sk: "Traktor", en: ["tractor"] },
+        { sk: "Schody", en: ["stairs"] }, { sk: "Sliepka", en: ["hen", "chicken"] },
+        { sk: "Schránka", en: ["mailbox", "postbox"] }, { sk: "Pneumatika", en: ["tire", "wheel"] },
+        { sk: "Brána", en: ["gate"] }, { sk: "Kladivo", en: ["hammer"] },
+        { sk: "Kosačka", en: ["mower"] }, { sk: "Sud", en: ["barrel"] },
+        { sk: "Metla", en: ["broom"] }, { sk: "Rebrík", en: ["ladder"] },
+        { sk: "Vlčiak", en: ["German shepherd", "dog"] }, { sk: "Kvetináč", en: ["pot", "flowerpot"] },
+        { sk: "Tepláky", en: ["sweatpants", "jersey"] }
     ];
 
     async function initApp() {
