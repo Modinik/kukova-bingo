@@ -14,72 +14,74 @@
             --primary: #27ae60;
             --accent: #f39c12;
             --dark: #1a2535;
-            --bg: #f8f9fa;
+            --bg: #ffffff; /* Biely motív */
+            --card-bg: #fdfdfd;
         }
 
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; color: var(--dark); }
         
-        /* Hlavný jednoduchý štýl */
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; margin-top: 20px; }
-        input { width: 90%; padding: 12px; margin: 15px 0; border: 2px solid #eee; border-radius: 8px; font-size: 16px; }
-        .btn-start { background: var(--primary); color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; width: 100%; }
+        /* BIELY MOTÍV (Menu a Mriežka) */
+        .card { background: var(--card-bg); padding: 30px 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; margin-top: 20px; border: 1px solid #eee; }
+        input { width: 90%; padding: 14px; margin: 15px 0; border: 2px solid #eee; border-radius: 12px; font-size: 16px; outline: none; transition: border-color 0.3s; }
+        input:focus { border-color: var(--primary); }
+        .btn-start { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; cursor: pointer; font-size: 18px; font-weight: bold; width: 100%; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2); }
         
-        /* Bingo mriežka */
-        #grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; max-width: 450px; margin-top: 20px; }
-        .cell { aspect-ratio: 1; background: white; border: 1px solid #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; text-align: center; cursor: pointer; position: relative; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .cell.found { border: 2px solid var(--primary); background: #f0fff4; }
-        .cell img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-        .cell span { z-index: 2; padding: 2px; background: rgba(255,255,255,0.7); border-radius: 3px; }
+        /* BINGO MRIEŽKA */
+        #grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 100%; max-width: 450px; margin-top: 20px; }
+        .cell { aspect-ratio: 1; background: white; border: 1px solid #e0e0e0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 8.5px; font-weight: 700; text-align: center; cursor: pointer; position: relative; overflow: hidden; transition: transform 0.1s; }
+        .cell:active { transform: scale(0.95); }
+        .cell.found { border: 2px solid var(--primary); background: #fafffb; }
+        .cell img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
+        .cell span { z-index: 2; padding: 2px 4px; background: rgba(255,255,255,0.85); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-transform: uppercase; }
 
-        /* --- CUSTOM FOŤÁK (Štýl od Claude) --- */
+        /* --- TMAVÝ CUSTOM FOŤÁK (Claude Style) --- */
         #cameraOverlay { 
             position: fixed; inset: 0; background: var(--dark); z-index: 1000; 
             display: none; flex-direction: column; align-items: center; justify-content: space-between; 
-            padding: 30px 20px; color: white;
+            padding: 40px 20px; color: white;
         }
-        .cam-header { text-align: center; width: 100%; }
-        .target-box { background: rgba(255,255,255,0.1); border: 1px solid var(--accent); padding: 10px 20px; border-radius: 12px; margin-bottom: 20px; }
-        .target-box span { font-size: 10px; text-transform: uppercase; color: #aaa; letter-spacing: 2px; }
-        .target-box h2 { margin: 5px 0; color: var(--accent); font-size: 24px; }
+        .target-box { background: rgba(255,255,255,0.08); border: 1px solid var(--accent); padding: 12px 25px; border-radius: 15px; text-align: center; width: 80%; }
+        .target-box span { font-size: 10px; text-transform: uppercase; color: #888; letter-spacing: 2px; }
+        .target-box h2 { margin: 5px 0; color: var(--accent); font-size: 26px; font-weight: 800; }
 
-        .video-container { position: relative; width: 100%; max-width: 350px; aspect-ratio: 1; border-radius: 20px; overflow: hidden; border: 2px solid rgba(255,255,255,0.2); }
+        .video-container { position: relative; width: 100%; max-width: 340px; aspect-ratio: 1; border-radius: 25px; overflow: hidden; border: 3px solid rgba(255,255,255,0.1); box-shadow: 0 0 30px rgba(0,0,0,0.5); }
         video { width: 100%; height: 100%; object-fit: cover; }
-        .scan-line { position: absolute; width: 100%; height: 2px; background: var(--accent); top: 0; left: 0; box-shadow: 0 0 15px var(--accent); animation: scan 2s linear infinite; pointer-events: none; }
+        .scan-line { position: absolute; width: 100%; height: 3px; background: var(--accent); top: 0; left: 0; box-shadow: 0 0 15px var(--accent); animation: scan 2.5s linear infinite; pointer-events: none; }
         @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
         .cam-footer { width: 100%; display: flex; flex-direction: column; gap: 15px; align-items: center; }
-        #aiStatus { font-size: 14px; color: #ddd; height: 20px; }
-        .cam-btns { display: flex; gap: 15px; width: 100%; max-width: 350px; }
-        .btn-capture { flex: 2; background: var(--primary); color: white; border: none; padding: 18px; border-radius: 15px; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(39,174,96,0.3); }
-        .btn-close { flex: 1; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 15px; font-size: 18px; cursor: pointer; }
+        #aiStatus { font-size: 14px; color: #bbb; text-align: center; min-height: 40px; padding: 0 20px; line-height: 1.4; }
+        #aiStatus b { color: var(--accent); font-family: monospace; }
+        
+        .cam-btns { display: flex; gap: 15px; width: 100%; max-width: 340px; }
+        .btn-capture { flex: 2; background: var(--primary); color: white; border: none; padding: 20px; border-radius: 18px; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 6px 20px rgba(39,174,96,0.3); }
+        .btn-close { flex: 1; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 18px; font-size: 22px; cursor: pointer; }
 
-        #timer { font-size: 24px; font-weight: bold; color: var(--accent); margin: 10px; font-family: monospace; }
+        #timer { font-size: 28px; font-weight: 800; color: var(--primary); margin: 10px; font-family: 'Courier New', monospace; background: #eee; padding: 5px 20px; border-radius: 30px; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <h1 style="color: var(--dark); margin-bottom: 0;">Dedinské Bingo 🎯</h1>
-    <p style="color: #666; margin-top: 5px;">Nájdi predmety a vyhraj!</p>
+    <h1 style="font-weight: 900; letter-spacing: -1px; margin-bottom: 0;">Dedinské Bingo 🎯</h1>
+    <p style="color: #888; margin-top: 5px; font-size: 14px;">Nájdi predmety v okolí a získaj Bingo!</p>
 
     <div id="setup" class="card">
-        <input type="text" id="playerName" placeholder="Tvoje meno...">
-        <p id="loadingMsg" style="font-size: 13px; color: #888;">🤖 Pripravujem AI model...</p>
-        <button id="startBtn" class="btn-start" disabled onclick="startGame()">ZAČAŤ HRU</button>
+        <input type="text" id="playerName" placeholder="Zadaj svoje meno...">
+        <p id="loadingMsg" style="font-size: 13px; color: #aaa; margin-bottom: 20px;">🤖 Prebúdzam AI neurónovú sieť...</p>
+        <button id="startBtn" class="btn-start" disabled onclick="startGame()">ZAČAŤ DOBRODRUŽSTVO</button>
     </div>
 
     <div id="game" class="hidden" style="text-align: center; width: 100%;">
         <div id="timer">0:00</div>
         <div id="grid"></div>
-        <button onclick="location.reload()" style="background:none; border:none; color:#888; margin-top:30px; cursor:pointer; text-decoration:underline;">Reštartovať hru</button>
+        <button onclick="location.reload()" style="background:none; border:none; color:#bbb; margin-top:40px; cursor:pointer; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Vynulovať hru</button>
     </div>
 
     <div id="cameraOverlay">
-        <div class="cam-header">
-            <div class="target-box">
-                <span>Hľadaný predmet</span>
-                <h2 id="targetName">Predmet</h2>
-            </div>
+        <div class="target-box">
+            <span>Zameraj sa na</span>
+            <h2 id="targetName">Predmet</h2>
         </div>
 
         <div class="video-container">
@@ -88,9 +90,9 @@
         </div>
 
         <div class="cam-footer">
-            <p id="aiStatus">Namier na predmet a odfoť</p>
+            <div id="aiStatus">Pripravený na analýzu...</div>
             <div class="cam-btns">
-                <button class="btn-capture" onclick="takePhoto()">📸 ODFOTIŤ</button>
+                <button class="btn-capture" onclick="takePhoto()">📸 ANALYZOVAŤ</button>
                 <button class="btn-close" onclick="closeCamera()">✕</button>
             </div>
         </div>
@@ -105,6 +107,7 @@
         emailjs_user: '6gKohTkcBCwR_zjq6'
     };
 
+    // TVOJICH 25 FINÁLNYCH OBJEKTOV
     const ITEMS = [
         { sk:'Kladivo', keywords:['hammer', 'mallet'] },
         { sk:'Visiaci zámok', keywords:['padlock', 'lock'] },
@@ -138,15 +141,15 @@
     async function init() {
         emailjs.init(CONFIG.emailjs_user);
         model = await mobilenet.load();
-        document.getElementById('loadingMsg').innerHTML = "✅ AI je pripravené!";
+        document.getElementById('loadingMsg').innerHTML = "✅ AI Siet je pripravená!";
         document.getElementById('startBtn').disabled = false;
     }
 
     function startGame() {
         const name = document.getElementById('playerName').value;
-        if(!name) return alert("Zadaj meno!");
+        if(!name) return alert("Prosím, zadaj svoje meno.");
 
-        alert("Rada: Foť predmety zblízka a na dobrom svetle. Ak ich AI na prvýkrát nepozná, skús iný uhol.");
+        alert("RADY PRE HRÁČA:\n1. Foť zblízka.\n2. Drž telefón pevne.\n3. Uisti sa, že je dobré svetlo.");
 
         gameState = {
             player: name,
@@ -186,7 +189,7 @@
         try {
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             document.getElementById('video').srcObject = videoStream;
-        } catch(e) { alert("Chyba kamery."); }
+        } catch(e) { alert("Nepodarilo sa spustiť kameru."); }
     }
 
     async function takePhoto() {
@@ -195,29 +198,37 @@
         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
 
-        document.getElementById('aiStatus').innerText = "🔍 AI analyzuje...";
+        document.getElementById('aiStatus').innerText = "🔍 Analyzujem obraz...";
         const predictions = await model.classify(canvas);
-        const item = gameState.grid[activeIdx];
+        
+        // Zobrazenie toho, čo AI vidí
+        const top = predictions[0];
+        const percent = Math.round(top.probability * 100);
+        document.getElementById('aiStatus').innerHTML = `AI vidí: <b>${top.className}</b><br>Istota: <b>${percent}%</b>`;
 
+        const item = gameState.grid[activeIdx];
         const match = predictions.some(p => 
-            p.probability > 0.1 && item.keywords.some(k => p.className.toLowerCase().includes(k))
+            p.probability > 0.08 && item.keywords.some(k => p.className.toLowerCase().includes(k.toLowerCase()))
         );
 
         if(match) {
-            localStorage.setItem(`photo_${gameState.player}_${activeIdx}`, canvas.toDataURL('image/jpeg', 0.5));
-            gameState.found.push(activeIdx);
-            closeCamera();
-            renderGrid();
-            checkWin();
+            document.getElementById('aiStatus').innerHTML = "<b style='color:#27ae60;'>✅ ZHODA NÁJDENÁ!</b>";
+            setTimeout(() => {
+                localStorage.setItem(`photo_${gameState.player}_${activeIdx}`, canvas.toDataURL('image/jpeg', 0.5));
+                gameState.found.push(activeIdx);
+                closeCamera();
+                renderGrid();
+                checkWin();
+            }, 800);
         } else {
-            document.getElementById('aiStatus').innerText = "❌ AI vidí: " + predictions[0].className;
+            // Ak sa netrafí, necháme status chvíľu svietiť, aby si hráč prečítal %
         }
     }
 
     function closeCamera() {
         if(videoStream) videoStream.getTracks().forEach(t => t.stop());
         document.getElementById('cameraOverlay').style.display = 'none';
-        document.getElementById('aiStatus').innerText = "Namier na predmet a odfoť";
+        document.getElementById('aiStatus').innerText = "Pripravený na analýzu...";
     }
 
     function checkWin() {
@@ -226,7 +237,7 @@
 
         if(bingo) {
             const time = document.getElementById('timer').innerText;
-            alert(`🎉 BINGO! Vyhral si v čase ${time}!`);
+            alert(`🎉 GRATULUJEME! Dosiahol si BINGO v čase ${time}. Výsledok bol odoslaný.`);
             emailjs.send(CONFIG.emailjs_service, CONFIG.emailjs_template, {
                 player_name: gameState.player,
                 finish_time: time
