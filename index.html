@@ -14,6 +14,7 @@
         
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background: var(--bg-color); margin: 0; padding: 10px; -webkit-user-select: none; }
         
+        /* SETUP OBRAZOVKA */
         #setup-screen { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 500px; margin: auto; padding: 10px; }
@@ -32,35 +33,28 @@
         #status { margin: 10px; padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; min-height: 50px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
         
         input[type="text"] { padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; border: 2px solid #ddd; width: 80%; max-width: 300px; }
+        
+        /* TLAČIDLO SO SIVÝM STAVOM */
         button { padding: 12px 30px; font-size: 18px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:disabled { background: #bdc3c7; cursor: not-allowed; }
 
-        /* --- FOŤÁK --- */
+        /* FOŤÁK */
         #cameraOverlay { 
             position: fixed; inset: 0; background: #1a2535; z-index: 1000; 
             display: none; flex-direction: column; align-items: center; justify-content: space-between; 
             padding: 40px 20px; color: white;
         }
 
-        .target-box { 
-            border: 3px solid var(--accent); 
-            background: rgba(241, 196, 15, 0.1); 
-            padding: 15px; 
-            width: 85%; 
-            border-radius: 12px;
-            text-align: center;
-        }
-        .target-box small { color: #eee; text-transform: uppercase; font-size: 10px; display: block; margin-bottom: 5px; }
+        .target-box { border: 3px solid var(--accent); background: rgba(241, 196, 15, 0.1); padding: 15px; width: 85%; border-radius: 12px; text-align: center; }
         .target-box h2 { margin: 0; color: var(--accent); font-size: 28px; text-transform: uppercase; }
         
         .video-container { position: relative; width: 100%; max-width: 340px; aspect-ratio: 1; border-radius: 20px; overflow: hidden; border: 2px solid #444; }
         video { width: 100%; height: 100%; object-fit: cover; }
         
         #aiStatus { font-size: 14px; color: #bbb; min-height: 45px; margin-top: 10px; }
-        #aiStatus b { color: var(--accent); }
-
         .cam-btns { display: flex; gap: 15px; width: 100%; max-width: 340px; margin-bottom: 20px; }
-        .btn-capture { flex: 2; background: var(--win-color); color: white; border: none; padding: 18px; border-radius: 15px; font-size: 18px; font-weight: bold; }
-        .btn-close { flex: 1; background: #333; color: white; border: none; border-radius: 15px; font-size: 20px; }
+        .btn-capture { flex: 2; background: var(--win-color); }
+        .btn-close { flex: 1; background: #333; }
 
         #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); color: #f1c40f; z-index: 2000; align-items: center; justify-content: center; flex-direction: column; font-size: 40px; font-weight: bold; }
         .hidden { display: none !important; }
@@ -72,7 +66,8 @@
         <h1 style="color: var(--main-color);">📍 Kúkovské Bingo</h1>
         <p>Zadaj meno a hľadaj objekty!</p>
         <input type="text" id="player-name" placeholder="Tvoje meno">
-        <button id="start-btn" onclick="startGame()" disabled>NAČÍTAM AI...</button>
+        <button id="start-btn" onclick="startGame()" disabled>ČAKÁM NA AI...</button>
+        <p id="load-msg" style="font-size: 12px; color: #7f8c8d; margin-top: 20px;">Pripravujem AI mozog...</p>
     </div>
 
     <div id="game-ui" class="hidden">
@@ -113,7 +108,6 @@
     let isGameOver = false;
     let gameState = [];
 
-    // FINÁLNY ZOZNAM BEZ TEPLÁKOV A ZELENEJ BEDNE
     const bingoData = [
         { sk: "Hydrant", en: ["fire hydrant"] }, { sk: "Mačka", en: ["cat", "tabby"] },
         { sk: "Kríž", en: ["crucifix", "cross"] }, { sk: "Vedro", en: ["bucket", "pail"] },
@@ -132,10 +126,15 @@
 
     async function initApp() {
         try {
+            // NAČÍTANIE MODELU
             model = await mobilenet.load();
-            document.getElementById('start-btn').disabled = false;
-            document.getElementById('start-btn').innerText = "SPUSTIŤ HRU";
-        } catch (e) { console.error("AI error"); }
+            const btn = document.getElementById('start-btn');
+            btn.disabled = false; // AKTIVÁCIA TLAČIDLA
+            btn.innerText = "SPUSTIŤ HRU";
+            document.getElementById('load-msg').innerText = "✅ AI Pripravené!";
+        } catch (e) { 
+            document.getElementById('load-msg').innerText = "❌ Chyba pri načítaní AI.";
+        }
     }
 
     function startGame() {
@@ -224,3 +223,4 @@
 </script>
 </body>
 </html>
+
