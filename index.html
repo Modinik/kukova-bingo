@@ -22,11 +22,20 @@
         input[type="text"] { padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; border: 2px solid #ddd; width: 80%; max-width: 300px; }
         button { padding: 12px 30px; font-size: 18px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         button:disabled { background: #bdc3c7; cursor: not-allowed; }
-        #cameraOverlay { position: fixed; inset: 0; background: #1a2535; z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: space-between; padding: 40px 20px; color: white; }
-        .target-box { border: 3px solid var(--accent); background: rgba(241, 196, 15, 0.1); padding: 15px; width: 85%; border-radius: 12px; text-align: center; }
-        .target-box h2 { margin: 0; color: var(--accent); font-size: 28px; text-transform: uppercase; }
-        .video-container { position: relative; width: 100%; max-width: 340px; aspect-ratio: 1; border-radius: 20px; overflow: hidden; border: 2px solid #444; }
+        
+        /* --- FOŤÁK --- */
+        #cameraOverlay { position: fixed; inset: 0; background: #1a2535; z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: space-between; padding: 30px 20px; color: white; }
+        .target-box { border: 3px solid var(--accent); background: rgba(241, 196, 15, 0.1); padding: 12px; width: 85%; border-radius: 12px; text-align: center; }
+        .target-box h2 { margin: 0; color: var(--accent); font-size: 24px; text-transform: uppercase; }
+        
+        .video-container { position: relative; width: 100%; max-width: 340px; aspect-ratio: 1; border-radius: 20px; overflow: hidden; border: 2px solid #444; background: black; }
         video { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* OVLÁDANIE ZOOMU A BLESKU */
+        .controls-overlay { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 15px; }
+        .zoom-slider { width: 100%; accent-color: var(--accent); }
+        .torch-btn { background: rgba(0,0,0,0.6); border: 1px solid white; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
+        
         #aiStatus { font-size: 14px; color: #bbb; min-height: 45px; margin-top: 10px; }
         .cam-btns { display: flex; gap: 15px; width: 100%; max-width: 340px; margin-bottom: 20px; }
         .btn-capture { flex: 2; background: var(--win-color); }
@@ -42,25 +51,28 @@
         <p>Zadaj meno a hľadaj objekty!</p>
         <input type="text" id="player-name" placeholder="Tvoje meno">
         <button id="start-btn" onclick="startGame()" disabled>ČAKÁM NA AI...</button>
-        <p id="load-msg" style="font-size: 12px; color: #7f8c8d; margin-top: 20px;">Pripravujem AI mozog...</p>
+        <p id="load-msg" style="font-size: 12px; color: #7f8c8d; margin-top: 20px;">Pripravujem AI...</p>
     </div>
 
     <div id="game-ui" class="hidden">
-        <div id="status">Pripravujem hru...</div>
+        <div id="status">Pripravujem...</div>
         <div class="grid" id="board"></div>
-        <button style="margin-top:20px; font-size:12px; background:#7f8c8d;" onclick="confirmReset()">REŠTARTOVAŤ</button>
+        <button style="margin-top:20px; font-size:10px; background:#7f8c8d; padding: 8px;" onclick="confirmReset()">REŠTART</button>
     </div>
 
     <div id="cameraOverlay">
         <div class="target-box">
-            <small>Tvoj aktuálny cieľ:</small>
             <h2 id="targetName">Predmet</h2>
         </div>
         <div class="video-container">
             <video id="video" playsinline autoplay muted></video>
+            <div class="controls-overlay">
+                <button id="torchBtn" class="torch-btn" onclick="toggleTorch()">🔦 BLESK: VYP</button>
+                <input type="range" id="zoomRange" class="zoom-slider" min="1" max="5" step="0.1" value="1" oninput="applyZoom(this.value)">
+            </div>
         </div>
         <div style="width:100%;">
-            <div id="aiStatus">Zamier na predmet a stlač analyzovať</div>
+            <div id="aiStatus">Zamier na predmet...</div>
             <div class="cam-btns">
                 <button class="btn-capture" onclick="takePhoto()">📸 ANALYZOVAŤ</button>
                 <button class="btn-close" onclick="closeCamera()">✕</button>
@@ -70,7 +82,7 @@
 
     <div id="overlay">
         <span>BINGO! 🏆</span>
-        <div id="final-stats" style="font-size: 20px; color: white; margin-top: 10px;"></div>
+        <div id="final-stats" style="font-size: 20px; color: white;"></div>
         <button style="margin-top:20px; background:#e67e22;" onclick="confirmReset()">NOVÁ HRA</button>
     </div>
 
@@ -79,9 +91,10 @@
 <script>
     (function(){ emailjs.init("6gKohTkcBCwR_zjq6"); })();
 
-    let model, playerName, startTime, activeIdx, videoStream;
+    let model, playerName, startTime, activeIdx, videoStream, track;
     let isGameOver = false;
     let gameState = [];
+    let isTorchOn = false;
 
     const bingoData = [
         { sk: "Hydrant", en: ["fire hydrant"] }, { sk: "Mačka", en: ["cat", "tabby"] },
@@ -100,20 +113,12 @@
     ];
 
     async function initApp() {
-        // Načítanie mena z pamäte
         const savedName = localStorage.getItem('bingo_player_name');
         if(savedName) document.getElementById('player-name').value = savedName;
-
         try {
             model = await mobilenet.load();
-            const btn = document.getElementById('start-btn');
-            btn.disabled = false;
-            // Ak existuje rozohraná hra, zmeníme text tlačidla
-            if(localStorage.getItem('bingo_current_game')) {
-                btn.innerText = "POKRAČOVAŤ V HRE";
-            } else {
-                btn.innerText = "SPUSTIŤ HRU";
-            }
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('start-btn').innerText = localStorage.getItem('bingo_current_game') ? "POKRAČOVAŤ" : "SPUSTIŤ";
             document.getElementById('load-msg').innerText = "✅ AI Pripravené!";
         } catch (e) { document.getElementById('load-msg').innerText = "❌ Chyba AI."; }
     }
@@ -121,9 +126,7 @@
     function startGame() {
         playerName = document.getElementById('player-name').value.trim();
         if(!playerName) return alert("Zadaj meno!");
-        
         localStorage.setItem('bingo_player_name', playerName);
-        
         const saved = localStorage.getItem('bingo_current_game');
         if(saved) {
             const data = JSON.parse(saved);
@@ -133,7 +136,6 @@
             startTime = new Date();
             gameState = bingoData.sort(() => Math.random() - 0.5).map(item => ({...item, done: false, img: null}));
         }
-
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('game-ui').classList.remove('hidden');
         renderBoard();
@@ -158,26 +160,55 @@
         activeIdx = idx;
         document.getElementById('targetName').innerText = gameState[idx].sk;
         document.getElementById('cameraOverlay').style.display = 'flex';
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        document.getElementById('video').srcObject = videoStream;
+        
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment', zoom: true, torch: true } 
+            });
+            const video = document.getElementById('video');
+            video.srcObject = videoStream;
+            track = videoStream.getVideoTracks()[0];
+
+            // Nastavenie limitov zoomu podľa zariadenia
+            const capabilities = track.getCapabilities();
+            if (capabilities.zoom) {
+                const zoomInput = document.getElementById('zoomRange');
+                zoomInput.min = capabilities.zoom.min;
+                zoomInput.max = capabilities.zoom.max;
+                zoomInput.value = capabilities.zoom.min;
+            }
+        } catch (e) { alert("Chyba kamery."); }
+    }
+
+    function applyZoom(val) {
+        if (track && track.getCapabilities().zoom) {
+            track.applyConstraints({ advanced: [{ zoom: val }] });
+        }
+    }
+
+    function toggleTorch() {
+        if (track && track.getCapabilities().torch) {
+            isTorchOn = !isTorchOn;
+            track.applyConstraints({ advanced: [{ torch: isTorchOn }] });
+            document.getElementById('torchBtn').innerText = isTorchOn ? "🔦 BLESK: ZAP" : "🔦 BLESK: VYP";
+        } else {
+            alert("Blesk nie je podporovaný.");
+        }
     }
 
     async function takePhoto() {
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
-        canvas.width = 400; canvas.height = 400; // Optimalizovaná veľkosť pre LocalStorage
+        canvas.width = 400; canvas.height = 400;
         canvas.getContext('2d').drawImage(video, 0, 0, 400, 400);
 
         document.getElementById('aiStatus').innerText = "🔍 Analyzujem...";
         const preds = await model.classify(canvas);
         const top = preds[0];
-        const percent = Math.round(top.probability * 100);
-        document.getElementById('aiStatus').innerHTML = `AI vidí: <b>${top.className.split(',')[0]}</b> (${percent}%)`;
+        document.getElementById('aiStatus').innerHTML = `Vidím: <b>${top.className.split(',')[0]}</b> (${Math.round(top.probability*100)}%)`;
 
-        const found = preds.some(p => p.probability > 0.08 && gameState[activeIdx].en.some(k => p.className.toLowerCase().includes(k.toLowerCase())));
-
-        if(found) {
-            document.getElementById('aiStatus').innerHTML = "<b style='color:#27ae60;'>ZHODA NÁJDENÁ!</b>";
+        if(preds.some(p => p.probability > 0.08 && gameState[activeIdx].en.some(k => p.className.toLowerCase().includes(k.toLowerCase())))) {
+            document.getElementById('aiStatus').innerHTML = "<b style='color:#27ae60;'>ZHODA!</b>";
             setTimeout(() => {
                 gameState[activeIdx].done = true;
                 gameState[activeIdx].img = canvas.toDataURL('image/jpeg', 0.6);
@@ -189,47 +220,30 @@
         }
     }
 
-    function autoSave() {
-        if(!isGameOver) {
-            localStorage.setItem('bingo_current_game', JSON.stringify({ playerName, startTime, gameState }));
-        }
-    }
+    function autoSave() { if(!isGameOver) localStorage.setItem('bingo_current_game', JSON.stringify({ playerName, startTime, gameState })); }
 
     function closeCamera() {
         if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+        isTorchOn = false;
+        document.getElementById('torchBtn').innerText = "🔦 BLESK: VYP";
         document.getElementById('cameraOverlay').style.display = 'none';
-        document.getElementById('aiStatus').innerText = "Zamier na predmet...";
     }
 
     function checkBingo() {
         const states = gameState.map(i => i.done);
         const lines = [[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];
-        
         if(lines.some(l => l.every(idx => states[idx]))) {
             isGameOver = true;
             const diff = Math.floor((new Date() - startTime) / 1000);
             const timeStr = `${Math.floor(diff/60)}m ${diff%60}s`;
-            document.getElementById('final-stats').innerText = `Čas: ${timeStr}`;
             document.getElementById('overlay').style.display = 'flex';
-            
-            // Pripravíme zoznam nájdených vecí pre email
-            const foundItems = gameState.filter(i => i.done).map(i => i.sk).join(", ");
-            
-            emailjs.send("service_lgyn3eh", "template_3f2051q", { 
-                player_name: playerName, 
-                finish_time: timeStr,
-                items_list: foundItems 
-            });
+            document.getElementById('final-stats').innerText = `Čas: ${timeStr}`;
+            emailjs.send("service_lgyn3eh", "template_3f2051q", { player_name: playerName, finish_time: timeStr, items_list: gameState.filter(i => i.done).map(i => i.sk).join(", ") });
             localStorage.removeItem('bingo_current_game');
         }
     }
 
-    function confirmReset() {
-        if(confirm("Chceš začať novú hru? Všetok progres a fotky sa vymažú.")) {
-            localStorage.removeItem('bingo_current_game');
-            location.reload();
-        }
-    }
+    function confirmReset() { if(confirm("Nová hra?")) { localStorage.removeItem('bingo_current_game'); location.reload(); } }
 
     initApp();
 </script>
