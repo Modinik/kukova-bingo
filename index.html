@@ -10,90 +10,55 @@
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
     <style>
-        :root { 
-            --main-color: #2c3e50; 
-            --win-color: #27ae60; 
-            --bg-color: #eef2f3; 
-            --accent: #f39c12;
-        }
-
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            text-align: center; 
-            background: var(--bg-color); 
-            margin: 0; padding: 10px; 
-            -webkit-user-select: none; 
-        }
-
-        /* LOOK PODĽA TVOJHO KÓDU */
-        #setup-screen { 
-            position: fixed; inset: 0; background: white; z-index: 100; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; 
-        }
+        :root { --main-color: #2c3e50; --win-color: #27ae60; --bg-color: #eef2f3; --accent: #f39c12; }
         
-        .grid { 
-            display: grid; grid-template-columns: repeat(5, 1fr); 
-            gap: 8px; max-width: 500px; margin: auto; padding: 10px; 
-        }
-
+        /* PÔVODNÝ LOOK */
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: var(--bg-color); margin: 0; padding: 10px; -webkit-user-select: none; }
+        
+        #setup-screen { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 500px; margin: auto; padding: 10px; }
+        
         .cell { 
             aspect-ratio: 1; border: 2px solid var(--main-color); background: white; 
             display: flex; align-items: center; justify-content: center; font-size: 8px; 
             cursor: pointer; position: relative; overflow: hidden; font-weight: bold; 
             border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
         }
-
+        
         .cell img { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
         .cell span { z-index: 2; background: rgba(255,255,255,0.8); padding: 2px 4px; border-radius: 3px; text-transform: uppercase; }
         .completed { border-color: var(--win-color); background: #d4edda; pointer-events: none; }
+        
+        #status { margin: 10px; padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; min-height: 50px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        
+        input[type="text"] { padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; border: 2px solid #ddd; width: 80%; max-width: 300px; }
+        button { padding: 12px 30px; font-size: 18px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:disabled { background: #bdc3c7; }
 
-        #status { 
-            margin: 10px; padding: 12px; background: var(--main-color); color: white; 
-            border-radius: 8px; font-weight: bold; min-height: 50px; 
-            display: flex; align-items: center; justify-content: center; font-size: 14px; 
-        }
-
-        #timer { font-size: 20px; font-weight: bold; color: var(--main-color); margin-bottom: 5px; }
-
-        input[type="text"] { 
-            padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; 
-            border: 2px solid #ddd; width: 80%; max-width: 300px; 
-        }
-
-        button { 
-            padding: 12px 30px; font-size: 18px; background: var(--win-color); 
-            color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; 
-        }
-
-        /* --- TEN DOSŤ DOBRÝ FOŤÁK (Tmavý štýl) --- */
+        /* --- TMAVÝ FOŤÁK (VYLEPŠENÝ) --- */
         #cameraOverlay { 
             position: fixed; inset: 0; background: #1a2535; z-index: 1000; 
             display: none; flex-direction: column; align-items: center; justify-content: space-between; 
             padding: 40px 20px; color: white;
         }
-        .target-box { background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); padding: 10px 20px; width: 85%; text-align: left; }
-        .target-box small { color: #aaa; text-transform: uppercase; font-size: 10px; }
+        .target-box { background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); padding: 12px; width: 85%; text-align: left; }
         .target-box h2 { margin: 0; color: var(--accent); font-size: 24px; }
-
+        
         .video-container { position: relative; width: 100%; max-width: 340px; aspect-ratio: 1; border-radius: 20px; overflow: hidden; border: 2px solid #444; }
         video { width: 100%; height: 100%; object-fit: cover; }
         .scan-line { position: absolute; width: 100%; height: 3px; background: var(--accent); top: 0; animation: scan 2.5s linear infinite; box-shadow: 0 0 15px var(--accent); }
         @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
-        #aiStatus { font-size: 14px; color: #bbb; min-height: 40px; text-align: center; }
+        #aiStatus { font-size: 14px; color: #bbb; min-height: 45px; margin-top: 10px; }
         #aiStatus b { color: var(--accent); }
-        
-        .cam-btns { display: flex; gap: 15px; width: 100%; max-width: 340px; }
+
+        .cam-btns { display: flex; gap: 15px; width: 100%; max-width: 340px; margin-bottom: 20px; }
         .btn-capture { flex: 2; background: var(--win-color); color: white; border: none; padding: 18px; border-radius: 15px; font-size: 18px; font-weight: bold; }
         .btn-close { flex: 1; background: #333; color: white; border: none; border-radius: 15px; font-size: 20px; }
 
-        /* VÝHRA */
-        #overlay { 
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
-            color: #f1c40f; z-index: 2000; align-items: center; justify-content: center; 
-            flex-direction: column; font-size: 40px; font-weight: bold; 
-        }
-
+        /* BINGO OVERLAY */
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); color: #f1c40f; z-index: 2000; align-items: center; justify-content: center; flex-direction: column; font-size: 40px; font-weight: bold; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -101,32 +66,29 @@
 
     <div id="setup-screen">
         <h1 style="color: var(--main-color);">📍 Kúkovské Bingo</h1>
-        <p>Zadaj meno a nájdi 5 v rade!</p>
+        <p>Zadaj meno a hľadaj objekty!</p>
         <input type="text" id="player-name" placeholder="Tvoje meno">
-        <button id="start-btn" onclick="startGame()" disabled>ČAKÁM NA AI...</button>
+        <button id="start-btn" onclick="startGame()" disabled>NAČÍTAM AI...</button>
         <p id="load-msg" style="font-size: 12px; color: #7f8c8d; margin-top: 20px;">Pripravujem AI mozog...</p>
     </div>
 
     <div id="game-ui" class="hidden">
-        <div id="timer">0:00</div>
         <div id="status">Pripravujem hru...</div>
         <div class="grid" id="board"></div>
-        <button style="margin-top: 20px; background: #7f8c8d; font-size: 12px;" onclick="confirmReset()">RESTARTOVAŤ</button>
+        <button style="margin-top:20px; font-size:12px; background:#7f8c8d;" onclick="confirmReset()">REŠTARTOVAŤ</button>
     </div>
 
     <div id="cameraOverlay">
         <div class="target-box">
-            <small>Zameraj sa na:</small>
+            <small style="color:#888; text-transform:uppercase;">Aktuálny cieľ:</small>
             <h2 id="targetName">Predmet</h2>
         </div>
-
         <div class="video-container">
             <video id="video" playsinline autoplay muted></video>
             <div class="scan-line"></div>
         </div>
-
-        <div class="cam-ui" style="width: 100%;">
-            <div id="aiStatus">Pripravený na analýzu...</div>
+        <div style="width:100%;">
+            <div id="aiStatus">Zamier na predmet...</div>
             <div class="cam-btns">
                 <button class="btn-capture" onclick="takePhoto()">📸 ANALYZOVAŤ</button>
                 <button class="btn-close" onclick="closeCamera()">✕</button>
@@ -137,7 +99,7 @@
     <div id="overlay">
         <span>BINGO! 🏆</span>
         <div id="final-stats" style="font-size: 20px; color: white; margin-top: 10px;"></div>
-        <button style="margin-top:20px; font-size:14px; background:#e67e22;" onclick="location.reload()">NOVÁ HRA</button>
+        <button style="margin-top:20px; background:#e67e22;" onclick="location.reload()">NOVÁ HRA</button>
     </div>
 
     <canvas id="canvas" style="display:none;"></canvas>
@@ -151,49 +113,39 @@
 
     const bingoData = [
         { sk: "Hydrant", en: ["fire hydrant"] }, { sk: "Mačka", en: ["cat", "tabby"] },
-        { sk: "Kladivo", en: ["hammer", "mallet"] }, { sk: "Visiaci zámok", en: ["padlock", "lock"] },
-        { sk: "Kosačka", en: ["lawn mower", "mower"] }, { sk: "Vedro", en: ["bucket", "pail"] },
+        { sk: "Kríž", en: ["crucifix", "cross"] }, { sk: "Značka prechodu", en: ["street sign"] },
+        { sk: "Zel. bedňa", en: ["trash can", "garbage"] }, { sk: "Vedro", en: ["bucket", "pail"] },
         { sk: "Lopata", en: ["shovel"] }, { sk: "Živý plot", en: ["hedge"] },
         { sk: "Fúrik", en: ["barrow", "wheelbarrow"] }, { sk: "Komín", en: ["chimney"] },
         { sk: "Bicykel", en: ["bicycle", "bike"] }, { sk: "Lavička", en: ["bench"] },
-        { sk: "Traktor", en: ["tractor"] }, { sk: "Schody", en: ["stairs", "staircase"] },
+        { sk: "Traktor", en: ["tractor"] }, { sk: "Schody", en: ["stairs"] },
         { sk: "Sliepka", en: ["hen", "chicken"] }, { sk: "Schránka", en: ["mailbox", "postbox"] },
-        { sk: "Pneumatika", en: ["tire", "wheel"] }, { sk: "Metla", en: ["broom"] },
-        { sk: "Sud", keywords: ["barrel", "drum"] }, { sk: "Motorová píla", en: ["chain saw"] },
-        { sk: "Rebrík", en: ["ladder"] }, { sk: "Vlčiak", en: ["German shepherd", "dog"] },
-        { sk: "Poleno", en: ["log", "firewood"] }, { sk: "Kvetináč", en: ["pot", "flowerpot"] },
-        { sk: "Smetiak", en: ["trash can", "garbage can"] }
+        { sk: "Pneumatika", en: ["tire", "wheel"] }, { sk: "Traktor", en: ["tractor"] },
+        { sk: "Smetiak", en: ["trash can"] }, { sk: "Brána", en: ["gate"] },
+        { sk: "Kladivo", en: ["hammer"] }, { sk: "Kosačka", en: ["mower"] },
+        { sk: "Sud", en: ["barrel"] }, { sk: "Metla", en: ["broom"] },
+        { sk: "Rebrík", en: ["ladder"] }
     ];
 
     async function initApp() {
         try {
             model = await mobilenet.load();
-            document.getElementById('load-msg').innerText = "✅ AI Mozog je pripravený!";
+            document.getElementById('load-msg').innerText = "✅ AI Pripravené!";
             document.getElementById('start-btn').disabled = false;
+            document.getElementById('start-btn').innerText = "SPUSTIŤ HRU";
         } catch (e) { document.getElementById('load-msg').innerText = "❌ Chyba AI."; }
     }
 
     function startGame() {
         playerName = document.getElementById('player-name').value.trim();
-        if(!playerName) return alert("Najprv zadaj svoje meno!");
-
-        alert("RADA: Foť objekty zblízka a na dobrom svetle!");
-
-        const saved = localStorage.getItem('bingo_current_game');
-        if(saved) {
-            const data = JSON.parse(saved);
-            gameState = data.gameState;
-            startTime = new Date(data.startTime);
-        } else {
-            startTime = new Date();
-            gameState = bingoData.sort(() => Math.random() - 0.5).map(item => ({...item, done: false, img: null}));
-        }
+        if(!playerName) return alert("Zadaj meno!");
+        
+        startTime = new Date();
+        gameState = bingoData.sort(() => Math.random() - 0.5).map(item => ({...item, done: false, img: null}));
 
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('game-ui').classList.remove('hidden');
         renderBoard();
-        setInterval(updateTimer, 1000);
-        setInterval(autoSave, 5000);
     }
 
     function renderBoard() {
@@ -214,10 +166,8 @@
         activeIdx = idx;
         document.getElementById('targetName').innerText = gameState[idx].sk;
         document.getElementById('cameraOverlay').style.display = 'flex';
-        try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            document.getElementById('video').srcObject = videoStream;
-        } catch (e) { alert("Chyba kamery."); }
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        document.getElementById('video').srcObject = videoStream;
     }
 
     async function takePhoto() {
@@ -226,21 +176,20 @@
         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
 
-        document.getElementById('aiStatus').innerText = "🔍 Analyzujem...";
+        document.getElementById('aiStatus').innerText = "🔍 AI Analyzuje...";
         const preds = await model.classify(canvas);
-        
         const top = preds[0];
         const percent = Math.round(top.probability * 100);
+        
         document.getElementById('aiStatus').innerHTML = `AI vidí: <b>${top.className.split(',')[0]}</b> (${percent}%)`;
 
-        const item = gameState[activeIdx];
-        const found = preds.some(p => p.probability > 0.08 && item.en.some(k => p.className.toLowerCase().includes(k.toLowerCase())));
+        const found = preds.some(p => p.probability > 0.08 && gameState[activeIdx].en.some(k => p.className.toLowerCase().includes(k.toLowerCase())));
 
         if(found) {
-            document.getElementById('aiStatus').innerHTML = "<b style='color:#27ae60;'>✅ ZHODA NÁJDENÁ!</b>";
+            document.getElementById('aiStatus').innerHTML = "<b style='color:#27ae60;'>ZHODA NÁJDENÁ!</b>";
             setTimeout(() => {
-                item.done = true;
-                item.img = canvas.toDataURL('image/jpeg', 0.5);
+                gameState[activeIdx].done = true;
+                gameState[activeIdx].img = canvas.toDataURL('image/jpeg', 0.5);
                 closeCamera();
                 renderBoard();
                 checkBingo();
@@ -251,17 +200,7 @@
     function closeCamera() {
         if(videoStream) videoStream.getTracks().forEach(t => t.stop());
         document.getElementById('cameraOverlay').style.display = 'none';
-        document.getElementById('aiStatus').innerText = "Pripravený na analýzu...";
-    }
-
-    function updateTimer() {
-        if(isGameOver) return;
-        const diff = Math.floor((new Date() - startTime) / 1000);
-        document.getElementById('timer').innerText = `${Math.floor(diff/60)}:${String(diff%60).padStart(2,'0')}`;
-    }
-
-    function autoSave() {
-        if(!isGameOver) localStorage.setItem('bingo_current_game', JSON.stringify({ playerName, startTime, gameState }));
+        document.getElementById('aiStatus').innerText = "Zamier na predmet...";
     }
 
     function checkBingo() {
@@ -269,19 +208,16 @@
         const lines = [[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];
         if(lines.some(l => l.every(idx => states[idx]))) {
             isGameOver = true;
-            const timeStr = document.getElementById('timer').innerText;
+            const diff = Math.floor((new Date() - startTime) / 1000);
+            const timeStr = `${Math.floor(diff/60)}m ${diff%60}s`;
             document.getElementById('final-stats').innerText = `Čas: ${timeStr}`;
             document.getElementById('overlay').style.display = 'flex';
             emailjs.send("service_lgyn3eh", "template_3f2051q", { player_name: playerName, finish_time: timeStr });
-            localStorage.removeItem('bingo_current_game');
         }
     }
 
     function confirmReset() {
-        if(confirm("Naozaj začať odznova?")) {
-            localStorage.removeItem('bingo_current_game');
-            location.reload();
-        }
+        if(confirm("Začať odznova?")) location.reload();
     }
 
     initApp();
