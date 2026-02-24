@@ -113,21 +113,21 @@
     let isGameOver = false;
     let gameState = [];
 
-    // AKTUALIZOVANÝ ZOZNAM PREDMETOV
+    // FINÁLNY ZOZNAM BEZ TEPLÁKOV A ZELENEJ BEDNE
     const bingoData = [
         { sk: "Hydrant", en: ["fire hydrant"] }, { sk: "Mačka", en: ["cat", "tabby"] },
-        { sk: "Kríž", en: ["crucifix", "cross"] }, { sk: "Zel. bedňa", en: ["trash can", "garbage"] },
-        { sk: "Vedro", en: ["bucket", "pail"] }, { sk: "Lopata", en: ["shovel"] },
-        { sk: "Živý plot", en: ["hedge"] }, { sk: "Fúrik", en: ["barrow", "wheelbarrow"] },
-        { sk: "Komín", en: ["chimney"] }, { sk: "Bicykel", en: ["bicycle", "bike"] },
-        { sk: "Lavička", en: ["bench"] }, { sk: "Traktor", en: ["tractor"] },
-        { sk: "Schody", en: ["stairs"] }, { sk: "Sliepka", en: ["hen", "chicken"] },
-        { sk: "Schránka", en: ["mailbox", "postbox"] }, { sk: "Pneumatika", en: ["tire", "wheel"] },
-        { sk: "Brána", en: ["gate"] }, { sk: "Kladivo", en: ["hammer"] },
-        { sk: "Kosačka", en: ["mower"] }, { sk: "Sud", en: ["barrel"] },
-        { sk: "Metla", en: ["broom"] }, { sk: "Rebrík", en: ["ladder"] },
-        { sk: "Vlčiak", en: ["German shepherd", "dog"] }, { sk: "Kvetináč", en: ["pot", "flowerpot"] },
-        { sk: "Tepláky", en: ["sweatpants", "jersey"] }
+        { sk: "Kríž", en: ["crucifix", "cross"] }, { sk: "Vedro", en: ["bucket", "pail"] },
+        { sk: "Lopata", en: ["shovel"] }, { sk: "Živý plot", en: ["hedge"] },
+        { sk: "Fúrik", en: ["barrow", "wheelbarrow"] }, { sk: "Komín", en: ["chimney"] },
+        { sk: "Bicykel", en: ["bicycle", "bike"] }, { sk: "Lavička", en: ["bench"] },
+        { sk: "Traktor", en: ["tractor"] }, { sk: "Schody", en: ["stairs"] },
+        { sk: "Sliepka", en: ["hen", "chicken"] }, { sk: "Schránka", en: ["mailbox", "postbox"] },
+        { sk: "Pneumatika", en: ["tire", "wheel"] }, { sk: "Brána", en: ["gate"] },
+        { sk: "Kladivo", en: ["hammer"] }, { sk: "Kosačka", en: ["mower"] },
+        { sk: "Sud", en: ["barrel"] }, { sk: "Metla", en: ["broom"] },
+        { sk: "Rebrík", en: ["ladder"] }, { sk: "Vlčiak", en: ["German shepherd", "dog"] },
+        { sk: "Kvetináč", en: ["pot", "flowerpot"] }, { sk: "Poleno", en: ["log", "firewood"] },
+        { sk: "Visiaci zámok", en: ["padlock", "lock"] }
     ];
 
     async function initApp() {
