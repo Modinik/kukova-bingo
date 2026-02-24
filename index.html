@@ -8,786 +8,271 @@
 <meta name="theme-color" content="#1a2535">
 <title>Kúkovské Bingo 🎯</title>
 
-<!-- TensorFlow.js + MobileNet -->
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
 
-<!-- EmailJS -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
-<!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
+/* ... (ponechané Claudove CSS pre vizuál) ... */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 :root {
-  --navy:        #1a2535;
-  --navy2:       #1f2d3d;
-  --glass:       rgba(255,255,255,0.06);
-  --glass2:      rgba(255,255,255,0.11);
-  --glass3:      rgba(255,255,255,0.18);
-  --border:      rgba(255,255,255,0.10);
-  --border2:     rgba(255,255,255,0.18);
-  --green:       #27ae60;
-  --green2:      #2ecc71;
-  --amber:       #f39c12;
-  --amber2:      #f1c40f;
-  --red:         #e74c3c;
-  --text:        #ecf0f1;
-  --text2:       #bdc3c7;
-  --muted:       #7f8c8d;
-  --radius:      12px;
-  --radius2:     18px;
-  --shadow:      0 8px 32px rgba(0,0,0,.45);
-  --font-display:'Bebas Neue', sans-serif;
-  --font-body:   'Syne', sans-serif;
-  --font-mono:   'DM Mono', monospace;
+  --navy: #1a2535; --navy2: #1f2d3d; --glass: rgba(255,255,255,0.06);
+  --glass2: rgba(255,255,255,0.11); --glass3: rgba(255,255,255,0.18);
+  --border: rgba(255,255,255,0.10); --border2: rgba(255,255,255,0.18);
+  --green: #27ae60; --green2: #2ecc71; --amber: #f39c12; --amber2: #f1c40f;
+  --red: #e74c3c; --text: #ecf0f1; --text2: #bdc3c7; --muted: #7f8c8d;
+  --radius: 12px; --radius2: 18px; --shadow: 0 8px 32px rgba(0,0,0,.45);
+  --font-display:'Bebas Neue', sans-serif; --font-body:'Syne', sans-serif; --font-mono:'DM Mono', monospace;
 }
-
-html, body {
-  height: 100%; width: 100%;
-  background: var(--navy);
-  color: var(--text);
-  font-family: var(--font-body);
-  overflow: hidden;
-  overscroll-behavior: none;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-
-/* BG */
+html, body { height: 100%; width: 100%; background: var(--navy); color: var(--text); font-family: var(--font-body); overflow: hidden; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; user-select: none; }
 #bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-#bg::before {
-  content: ''; position: absolute; inset: 0;
-  background:
-    radial-gradient(ellipse 70% 50% at 15% 15%, rgba(39,174,96,.12) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 85% 75%, rgba(243,156,18,.08) 0%, transparent 55%),
-    radial-gradient(ellipse 80% 80% at 50% 50%, var(--navy2) 0%, var(--navy) 100%);
-}
-.orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.18; animation: orbFloat 12s ease-in-out infinite; }
-.orb1 { width: 300px; height: 300px; background: var(--green); top: -80px; left: -80px; }
-.orb2 { width: 200px; height: 200px; background: var(--amber); bottom: -60px; right: -60px; animation-delay: -6s; }
-@keyframes orbFloat {
-  0%,100% { transform: translate(0,0) scale(1); }
-  33%      { transform: translate(30px,-20px) scale(1.08); }
-  66%      { transform: translate(-20px,25px) scale(.94); }
-}
-
-/* SCREENS */
-.screen {
-  position: fixed; inset: 0; z-index: 10;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 20px;
-  transition: opacity .45s cubic-bezier(.4,0,.2,1), transform .45s cubic-bezier(.4,0,.2,1);
-}
+#bg::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 50% at 15% 15%, rgba(39,174,96,.12) 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 85% 75%, rgba(243,156,18,.08) 0%, transparent 55%), radial-gradient(ellipse 80% 80% at 50% 50%, var(--navy2) 0%, var(--navy) 100%); }
+.screen { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; transition: opacity .45s, transform .45s; }
 .screen.hidden { opacity: 0; pointer-events: none; transform: translateY(12px) scale(.98); }
-
-/* SETUP */
 #setup { gap: 22px; }
-
-.logo-wrap { text-align: center; margin-bottom: 4px; }
-.logo-sub { font-family: var(--font-mono); font-size: 11px; letter-spacing: 4px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
-.logo {
-  font-family: var(--font-display);
-  font-size: clamp(52px, 18vw, 90px); line-height: .95; letter-spacing: 5px;
-  background: linear-gradient(135deg, var(--amber) 0%, var(--amber2) 40%, var(--green2) 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  filter: drop-shadow(0 0 30px rgba(243,156,18,.35));
-  animation: logoPulse 4s ease-in-out infinite;
-}
-@keyframes logoPulse {
-  0%,100% { filter: drop-shadow(0 0 30px rgba(243,156,18,.35)); }
-  50%      { filter: drop-shadow(0 0 50px rgba(243,156,18,.65)); }
-}
-.logo-tag { font-size: 12px; color: var(--muted); letter-spacing: 2px; margin-top: 4px; }
-
-.card {
-  width: 100%; max-width: 380px;
-  background: var(--glass2); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border2); border-radius: var(--radius2); padding: 24px 20px; box-shadow: var(--shadow);
-}
-.card label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-.card input {
-  width: 100%; background: rgba(0,0,0,.25); border: 1.5px solid var(--border2); border-radius: var(--radius);
-  padding: 13px 16px; font-family: var(--font-body); font-size: 16px; font-weight: 600; color: var(--text); outline: none;
-  transition: border-color .2s, box-shadow .2s;
-}
-.card input::placeholder { color: var(--muted); font-weight: 400; }
-.card input:focus { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(243,156,18,.18); }
-
+.logo { font-family: var(--font-display); font-size: clamp(52px, 18vw, 90px); line-height: .95; letter-spacing: 5px; background: linear-gradient(135deg, var(--amber) 0%, var(--amber2) 40%, var(--green2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 30px rgba(243,156,18,.35)); text-align: center; }
+.card { width: 100%; max-width: 380px; background: var(--glass2); backdrop-filter: blur(20px); border: 1px solid var(--border2); border-radius: var(--radius2); padding: 24px 20px; }
+.card input { width: 100%; background: rgba(0,0,0,.25); border: 1.5px solid var(--border2); border-radius: var(--radius); padding: 13px 16px; color: var(--text); outline: none; }
 .ai-loader { width: 100%; max-width: 380px; }
-.ai-loader-label { display: flex; justify-content: space-between; font-size: 11px; font-weight: 500; letter-spacing: 1px; color: var(--muted); margin-bottom: 7px; }
-.ai-loader-label span { font-family: var(--font-mono); color: var(--amber); }
 .progress-track { width: 100%; height: 5px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
-.progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--amber), var(--green2)); border-radius: 99px; transition: width .5s ease; box-shadow: 0 0 8px rgba(243,156,18,.5); }
-
-.btn {
-  width: 100%; max-width: 380px; padding: 16px 24px; border: none; border-radius: var(--radius2);
-  font-family: var(--font-display); font-size: 22px; letter-spacing: 3px;
-  cursor: pointer; transition: transform .15s, box-shadow .15s, opacity .2s; position: relative; overflow: hidden;
-}
-.btn:active { transform: scale(.97); }
-.btn-primary { background: linear-gradient(135deg, var(--amber) 0%, #e67e22 100%); color: #fff; box-shadow: 0 4px 20px rgba(243,156,18,.4); }
-.btn-primary:hover { box-shadow: 0 6px 28px rgba(243,156,18,.6); }
-.btn-primary:disabled { opacity: .45; cursor: not-allowed; }
-.btn-secondary { background: var(--glass2); border: 1.5px solid var(--border2); color: var(--text); backdrop-filter: blur(10px); font-size: 18px; letter-spacing: 2px; }
-.btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.08) 0%, transparent 50%); pointer-events: none; }
-
-/* GAME */
-#game { justify-content: flex-start; padding: 0; gap: 0; }
-
-#statusBar {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(15,22,32,.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border); padding: 10px 16px; min-height: 48px;
-  display: flex; align-items: center; gap: 10px;
-}
-#statusIcon { font-size: 18px; flex-shrink: 0; }
-#statusText { font-family: var(--font-mono); font-size: 12px; color: var(--text2); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#timerDisplay { font-family: var(--font-display); font-size: 20px; color: var(--amber); letter-spacing: 2px; flex-shrink: 0; }
-
-#gameContent {
-  width: 100%; flex: 1; display: flex; flex-direction: column; align-items: center;
-  padding: 58px 10px 12px; gap: 10px; overflow-y: auto; -webkit-overflow-scrolling: touch;
-}
-
-#progressWrap { width: 100%; max-width: 360px; display: flex; align-items: center; gap: 10px; }
-#progressLabel { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); white-space: nowrap; font-weight: 600; }
-#progressTrack { flex: 1; height: 4px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
-#progressFill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--green), var(--green2)); border-radius: 99px; transition: width .5s ease; }
-#progressCount { font-family: var(--font-mono); font-size: 11px; color: var(--green2); white-space: nowrap; }
-
+.progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--amber), var(--green2)); transition: width .5s ease; }
+.btn { width: 100%; max-width: 380px; padding: 16px 24px; border-radius: var(--radius2); font-family: var(--font-display); font-size: 22px; letter-spacing: 3px; cursor: pointer; transition: transform .15s; border:none; }
+.btn-primary { background: linear-gradient(135deg, var(--amber) 0%, #e67e22 100%); color: #fff; }
+.btn-secondary { background: var(--glass2); border: 1.5px solid var(--border2); color: var(--text); }
+#game { justify-content: flex-start; padding: 0; }
+#statusBar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(15,22,32,.92); backdrop-filter: blur(16px); padding: 10px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
 #grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; width: 100%; max-width: 360px; }
-
-.cell {
-  aspect-ratio: 1; position: relative;
-  background: var(--glass); border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden;
-  cursor: pointer; transition: transform .18s, border-color .25s, box-shadow .25s;
-  display: flex; align-items: center; justify-content: center;
-  animation: cellReveal .4s cubic-bezier(.4,0,.2,1) both;
-}
-.cell:active { transform: scale(.93); }
-.cell:not(.found):hover { border-color: var(--border2); transform: scale(.97); }
-@keyframes cellReveal { from { opacity:0; transform:scale(.85) translateY(6px); } to { opacity:1; transform:scale(1) translateY(0); } }
-
-.cell-label { font-size: clamp(7px,2vw,9.5px); font-weight: 600; color: var(--text2); text-align: center; padding: 3px; line-height: 1.3; z-index: 2; white-space: pre-line; }
-
-.cell.found { border-color: var(--green); box-shadow: 0 0 0 1px rgba(39,174,96,.3), 0 4px 16px rgba(39,174,96,.25); }
-.cell.found .cell-label { display: none; }
-.cell-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
-.cell-check { position: absolute; top: 3px; right: 3px; z-index: 3; width: 16px; height: 16px; background: var(--green); border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 9px; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
-.cell.found .cell-check { display: flex; }
-
-.cell.bingo-line { border-color: var(--amber2) !important; box-shadow: 0 0 0 2px rgba(241,196,15,.5), 0 4px 20px rgba(241,196,15,.35) !important; animation: bingoCell 1.2s ease-in-out infinite !important; }
-@keyframes bingoCell {
-  0%,100% { box-shadow: 0 0 0 2px rgba(241,196,15,.5), 0 4px 20px rgba(241,196,15,.35); }
-  50%      { box-shadow: 0 0 0 3px rgba(241,196,15,.8), 0 4px 28px rgba(241,196,15,.6); }
-}
-.cell.scanning { border-color: var(--amber) !important; animation: scanPulse .8s ease-in-out infinite !important; }
-@keyframes scanPulse {
-  0%,100% { box-shadow: 0 0 0 1px rgba(243,156,18,.3); }
-  50%      { box-shadow: 0 0 0 3px rgba(243,156,18,.55); }
-}
-
-/* Cell stagger */
-.cell:nth-child(1){animation-delay:.03s}.cell:nth-child(2){animation-delay:.06s}.cell:nth-child(3){animation-delay:.09s}
-.cell:nth-child(4){animation-delay:.12s}.cell:nth-child(5){animation-delay:.15s}.cell:nth-child(6){animation-delay:.18s}
-.cell:nth-child(7){animation-delay:.21s}.cell:nth-child(8){animation-delay:.24s}.cell:nth-child(9){animation-delay:.27s}
-.cell:nth-child(10){animation-delay:.30s}.cell:nth-child(11){animation-delay:.33s}.cell:nth-child(12){animation-delay:.36s}
-.cell:nth-child(13){animation-delay:.39s}.cell:nth-child(14){animation-delay:.42s}.cell:nth-child(15){animation-delay:.45s}
-.cell:nth-child(16){animation-delay:.48s}.cell:nth-child(17){animation-delay:.51s}.cell:nth-child(18){animation-delay:.54s}
-.cell:nth-child(19){animation-delay:.57s}.cell:nth-child(20){animation-delay:.60s}.cell:nth-child(21){animation-delay:.63s}
-.cell:nth-child(22){animation-delay:.66s}.cell:nth-child(23){animation-delay:.69s}.cell:nth-child(24){animation-delay:.72s}
-.cell:nth-child(25){animation-delay:.75s}
-
-/* CAMERA */
-#cameraOverlay {
-  position: fixed; inset: 0; z-index: 200;
-  background: rgba(0,0,0,.93); display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 14px; padding: 20px;
-  transition: opacity .3s;
-}
-#cameraOverlay.hidden { opacity: 0; pointer-events: none; }
-
-#videoPreview { width: 100%; max-width: 360px; aspect-ratio: 4/3; object-fit: cover; border-radius: var(--radius2); border: 2px solid var(--border2); background: #000; }
-
-.cam-target { width: 100%; max-width: 360px; background: var(--glass2); border: 1.5px solid var(--amber); border-radius: var(--radius); padding: 10px 16px; text-align: center; }
-.cam-target-label { font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 3px; font-family: var(--font-mono); }
-.cam-target-name { font-family: var(--font-display); font-size: 28px; letter-spacing: 2px; color: var(--amber); }
-
-.cam-buttons { width: 100%; max-width: 360px; display: flex; gap: 10px; }
-.btn-capture { flex: 1; padding: 16px; border: none; border-radius: var(--radius2); background: linear-gradient(135deg, var(--green) 0%, var(--green2) 100%); color: #fff; font-family: var(--font-display); font-size: 22px; letter-spacing: 3px; cursor: pointer; box-shadow: 0 4px 20px rgba(39,174,96,.4); transition: transform .15s; }
-.btn-capture:active { transform: scale(.96); }
-.btn-capture:disabled { opacity: .5; cursor: not-allowed; }
-.btn-close-cam { padding: 16px 20px; border: 1.5px solid var(--border2); border-radius: var(--radius2); background: var(--glass2); color: var(--text2); font-size: 22px; cursor: pointer; backdrop-filter: blur(10px); transition: transform .15s; }
-.btn-close-cam:active { transform: scale(.96); }
-
-#camStatus { width: 100%; max-width: 360px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-align: center; min-height: 18px; }
-#camStatus.success  { color: var(--green2); }
-#camStatus.error    { color: var(--red); }
-#camStatus.analyzing { color: var(--amber); }
-
-#snapCanvas { display: none; }
-
-/* VICTORY */
-#victory { background: rgba(10,16,26,.96); backdrop-filter: blur(20px); z-index: 300; gap: 16px; }
-#victory.hidden { transform: scale(.9); }
-
-.victory-stars { font-size: 40px; letter-spacing: 6px; animation: starSpin 3s linear infinite; }
-@keyframes starSpin { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
-
-.victory-title {
-  font-family: var(--font-display); font-size: clamp(64px,20vw,110px); letter-spacing: 6px;
-  background: linear-gradient(135deg, var(--amber) 0%, var(--amber2) 50%, var(--green2) 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  filter: drop-shadow(0 0 40px rgba(243,156,18,.6)); text-align: center;
-  animation: bingoTitle 2s ease-in-out infinite;
-}
-@keyframes bingoTitle {
-  0%,100% { filter: drop-shadow(0 0 40px rgba(243,156,18,.6)); transform: scale(1); }
-  50%      { filter: drop-shadow(0 0 70px rgba(243,156,18,.9)); transform: scale(1.03); }
-}
-
-.victory-card { width: 100%; max-width: 360px; background: var(--glass2); border: 1.5px solid var(--border2); border-radius: var(--radius2); padding: 20px; text-align: center; box-shadow: var(--shadow); }
-.victory-name { font-family: var(--font-display); font-size: 32px; letter-spacing: 3px; color: var(--amber); }
-.victory-time { font-family: var(--font-display); font-size: 52px; letter-spacing: 4px; color: var(--text); line-height: 1; margin: 6px 0; }
-.victory-label { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); font-family: var(--font-mono); }
-.victory-email-status { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: center; }
-.victory-email-status.sent   { color: var(--green2); }
-.victory-email-status.queued { color: var(--amber); }
-
-/* CONFETTI */
-#confettiCanvas { position: fixed; inset: 0; z-index: 290; pointer-events: none; }
-
-/* TOAST */
-#toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
-  z-index: 500; background: var(--glass3); backdrop-filter: blur(16px);
-  border: 1px solid var(--border2); border-radius: var(--radius);
-  padding: 12px 20px; font-size: 13px; font-weight: 500; color: var(--text);
-  box-shadow: var(--shadow); max-width: calc(100vw - 32px); text-align: center;
-  opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none;
-}
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-::-webkit-scrollbar { width: 3px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+.cell { aspect-ratio: 1; background: var(--glass); border: 1.5px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; cursor: pointer; }
+.cell-label { font-size: clamp(7px,2vw,9.5px); font-weight: 600; text-align: center; padding: 3px; white-space: pre-line; }
+.cell.found { border-color: var(--green); }
+.cell-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+#cameraOverlay { position: fixed; inset: 0; z-index: 200; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+#cameraOverlay.hidden { display: none; }
+#videoPreview { width: 100%; max-width: 360px; aspect-ratio: 4/3; object-fit: cover; border-radius: var(--radius2); }
+#victory { z-index: 300; background: rgba(10,16,26,.96); }
+#toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--glass3); padding: 12px 20px; border-radius: var(--radius); opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 500; }
+#toast.show { opacity: 1; }
 </style>
 </head>
 <body>
 
-<div id="bg"><div class="orb orb1"></div><div class="orb orb2"></div></div>
+<div id="bg"></div>
 
-<!-- ══════════ SETUP ══════════ -->
 <div class="screen" id="setup">
-  <div class="logo-wrap">
-    <div class="logo-sub">Vonkajšia hra</div>
-    <div class="logo">KÚKOVSKÉ<br>BINGO</div>
-    <div class="logo-tag">Outdoor Scavenger Hunt · AI Edition</div>
-  </div>
-
+  <div class="logo">KÚKOVSKÉ<br>BINGO</div>
   <div class="card">
-    <label for="playerName">Meno hráča</label>
-    <input type="text" id="playerName" placeholder="Zadaj svoje meno…" maxlength="30" autocomplete="off">
+    <label style="font-size:11px; color:var(--muted); letter-spacing:2px; display:block; margin-bottom:5px;">MENO HRÁČA</label>
+    <input type="text" id="playerName" placeholder="Zadaj meno..." maxlength="20">
   </div>
-
   <div class="ai-loader">
-    <div class="ai-loader-label">
+    <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:5px;">
       <span>🤖 Načítavam AI model</span>
       <span id="aiPercent">0%</span>
     </div>
     <div class="progress-track"><div class="progress-bar" id="aiProgress"></div></div>
   </div>
-
-  <button class="btn btn-primary" id="startBtn" disabled onclick="handleStartBtn()">NAČÍTAVAM…</button>
-  <button class="btn btn-secondary" id="continueBtn" style="display:none" onclick="continueGame()">▶ POKRAČOVAŤ</button>
+  <button class="btn btn-primary" id="startBtn" disabled onclick="handleStartBtn()">NAČÍTAVAM...</button>
+  <button class="btn btn-secondary" id="continueBtn" style="display:none; margin-top:10px;" onclick="continueGame()">▶ POKRAČOVAŤ</button>
 </div>
 
-<!-- ══════════ GAME ══════════ -->
 <div class="screen hidden" id="game">
   <div id="statusBar">
     <span id="statusIcon">🎯</span>
-    <span id="statusText">Ťukni na políčko a odfotografuj predmet</span>
-    <span id="timerDisplay">0:00</span>
+    <span id="statusText" style="font-size:12px; flex:1;">Nájdi predmety v dedine</span>
+    <span id="timerDisplay" style="color:var(--amber); font-family:var(--font-display); font-size:20px;">0:00</span>
   </div>
-  <div id="gameContent">
-    <div id="progressWrap">
-      <span id="progressLabel">Nájdené</span>
-      <div id="progressTrack"><div id="progressFill"></div></div>
-      <span id="progressCount">0 / 25</span>
-    </div>
+  <div style="margin-top:60px; width:100%; display:flex; flex-direction:column; align-items:center; gap:10px;">
     <div id="grid"></div>
   </div>
 </div>
 
-<!-- ══════════ CAMERA ══════════ -->
 <div id="cameraOverlay" class="hidden">
   <video id="videoPreview" playsinline autoplay muted></video>
-  <div class="cam-target">
-    <div class="cam-target-label">Fotografuješ</div>
-    <div class="cam-target-name" id="camTargetName">—</div>
+  <div style="text-align:center;">
+    <div style="font-size:10px; color:var(--muted);">FOTOGRAFUJEŠ</div>
+    <div id="camTargetName" style="font-family:var(--font-display); font-size:28px; color:var(--amber);">—</div>
   </div>
-  <div class="cam-buttons">
-    <button class="btn-capture" id="captureBtn" onclick="capturePhoto()">📸 FOTIŤ</button>
-    <button class="btn-close-cam" onclick="closeCamera()">✕</button>
+  <div style="display:flex; gap:10px; width:100%; max-width:360px;">
+    <button class="btn" style="background:var(--green); color:#fff; flex:1;" id="captureBtn" onclick="capturePhoto()">📸 FOTIŤ</button>
+    <button class="btn" style="background:var(--glass2); color:#fff; width:70px;" onclick="closeCamera()">✕</button>
   </div>
-  <div id="camStatus">Pripravený na fotenie</div>
+  <div id="camStatus" style="font-size:12px; color:var(--muted);">Namier a odfoť</div>
 </div>
-<canvas id="snapCanvas"></canvas>
+<canvas id="snapCanvas" style="display:none;"></canvas>
 
-<!-- ══════════ VICTORY ══════════ -->
 <div class="screen hidden" id="victory">
-  <div class="victory-stars">⭐ 🎉 ⭐</div>
-  <div class="victory-title">BINGO!</div>
-  <div class="victory-card">
-    <div class="victory-label">Hráč</div>
-    <div class="victory-name" id="victoryName">—</div>
-    <div class="victory-label" style="margin-top:14px">Čas hry</div>
-    <div class="victory-time" id="victoryTime">0:00</div>
-    <div class="victory-label">MM:SS</div>
-  </div>
-  <div class="victory-email-status" id="victoryEmailStatus">📧 Odosielam výsledok…</div>
-  <button class="btn btn-secondary" onclick="resetGame()" style="max-width:360px;margin-top:4px">🔄 NOVÁ HRA</button>
+  <div style="font-size:40px;">🎉 🎉 🎉</div>
+  <div style="font-family:var(--font-display); font-size:80px; color:var(--amber);">BINGO!</div>
+  <div id="victoryName" style="font-size:24px;">—</div>
+  <div id="victoryTime" style="font-size:40px; margin:10px 0;">0:00</div>
+  <div id="victoryEmailStatus" style="font-size:12px; color:var(--muted);">Odosielam výsledok...</div>
+  <button class="btn btn-primary" onclick="resetGame()">HRAŤ ZNOVA</button>
 </div>
 
-<canvas id="confettiCanvas"></canvas>
 <div id="toast"></div>
 
 <script>
-/* ══════════════════════════════════════
-   CONFIG
-══════════════════════════════════════ */
 const CONFIG = {
-  emailjs_public_key:   '6gKohTkcBCwR_zjq6',
-  emailjs_service_id:   'service_lgyn3eh',
-  emailjs_template_id:  'template_3f2051q',
-  threshold:            0.10,
-  autoSaveInterval:     5000,
-  offlineRetryInterval: 30000,
+  emailjs_public_key: '6gKohTkcBCwR_zjq6',
+  emailjs_service_id: 'service_lgyn3eh',
+  emailjs_template_id: 'template_3f2051q',
+  threshold: 0.10
 };
 
-/* ══════════════════════════════════════
-   ITEMS
-══════════════════════════════════════ */
+/* MOJE UPRAVENÉ OBJEKTY S AI KĽÚČOVÝMI SLOVAMI */
 const ALL_ITEMS = [
-  { sk:'Biele Audi',       emoji:'🚗', keywords:['sports car','convertible','car','coupe','racer','hot rod','automobile'] },
-  { sk:'Žlté auto',        emoji:'🚕', keywords:['cab','taxi','car','minivan','jeep','limousine','passenger car','van'] },
-  { sk:'Traktor',          emoji:'🚜', keywords:['tractor','thresher','harvester','plow','tiller','farm machine'] },
-  { sk:'Bicykel',          emoji:'🚲', keywords:['bicycle','bike','mountain bike','cycle','tandem bicycle'] },
-  { sk:'Pneumatika',       emoji:'🔵', keywords:['tire','tyre','wheel','car wheel','rim','disk brake'] },
-  { sk:'Cedule priechod',  emoji:'🚸', keywords:['traffic sign','street sign','traffic light','sign','traffic'] },
-  { sk:'Rozostavaný dom',  emoji:'🏗️', keywords:['building','construction','architecture','house','brick','crane'] },
-  { sk:'Komín',            emoji:'🏭', keywords:['chimney','smokestack','stovepipe','chimney pot','fireplace'] },
-  { sk:'Strecha',          emoji:'🏠', keywords:['roof','rooftop','tile roof','hip roof','shingle','barn'] },
-  { sk:'Schody',           emoji:'🪜', keywords:['staircase','stairs','step','stairway','ladder','fire escape'] },
-  { sk:'Brána',            emoji:'🚪', keywords:['gate','iron gate','fence','grating','barrier','turnstile'] },
-  { sk:'Lavička',          emoji:'🪑', keywords:['bench','park bench','seat','pew','chair'] },
-  { sk:'Poštová schránka', emoji:'📬', keywords:['mailbox','letterbox','post box','mail slot','vending machine'] },
-  { sk:'Hydrant',          emoji:'🔴', keywords:['fire hydrant','hydrant','fireplug'] },
-  { sk:'Fúrik',            emoji:'🛒', keywords:['wheelbarrow','barrow','garden cart','hand truck','dolly'] },
-  { sk:'Lopata',           emoji:'🪏', keywords:['shovel','spade','hoe','garden spade','snowplow'] },
-  { sk:'Vedro',            emoji:'🪣', keywords:['bucket','pail','barrel','tub','water jug','watering can'] },
-  { sk:'Zelený kôš',       emoji:'🗑️', keywords:['trash can','garbage can','recycling bin','bin','dumpster','waste'] },
-  { sk:'Mačka',            emoji:'🐱', keywords:['cat','tabby','kitten','Siamese cat','Egyptian cat','Persian cat','tiger cat'] },
-  { sk:'Sliepka',          emoji:'🐔', keywords:['hen','chicken','rooster','cock','fowl','partridge'] },
-  { sk:'Hovna',            emoji:'💩', keywords:['manure','dung','compost','mud','soil','fertilizer'] },
-  { sk:'Živý plot',        emoji:'🌿', keywords:['hedge','shrub','bush','shrubbery','thicket','yew','topiary'] },
-  { sk:'Zelený plot',      emoji:'🟩', keywords:['fence','picket fence','chainlink fence','wire fence','rail fence'] },
-  { sk:'Ihličnan',         emoji:'🌲', keywords:['fir','pine','conifer','spruce','Christmas tree','Norway spruce','cedar'] },
-  { sk:'Kríž',             emoji:'✝️', keywords:['cross','crucifix','church','chapel','monastery'] },
+  { sk:'Kladivo', emoji:'🔨', keywords:['hammer', 'mallet'] },
+  { sk:'Visiaci zámok', emoji:'🔒', keywords:['padlock', 'lock', 'combination lock'] },
+  { sk:'Kosačka', emoji:'🚜', keywords:['lawn mower', 'mower', 'tractor'] },
+  { sk:'Motorová píla', emoji:'🪚', keywords:['chain saw', 'chainsaw', 'power saw'] },
+  { sk:'Lopata', emoji:'🥄', keywords:['shovel', 'spade', 'scoop', 'hoe'] },
+  { sk:'Fúrik', emoji:'🛒', keywords:['wheelbarrow', 'barrow', 'garden cart'] },
+  { sk:'Traktor', emoji:'🚜', keywords:['tractor', 'thresher', 'farm machine', 'harvester'] },
+  { sk:'Krhlina', emoji:'🚿', keywords:['watering can', 'water pot', 'pitcher'] },
+  { sk:'Vedro', emoji:'🪣', keywords:['bucket', 'pail', 'barrel', 'tub'] },
+  { sk:'Rebrík', emoji:'🪜', keywords:['ladder', 'step ladder', 'fire escape'] },
+  { sk:'Vlčiak', emoji:'🐕', keywords:['German shepherd', 'German shepherd dog', 'police dog', 'dog', 'alsatian'] },
+  { sk:'Mačka', emoji:'🐱', keywords:['tabby', 'tiger cat', 'cat', 'kitten'] },
+  { sk:'Sliepka', emoji:'🐔', keywords:['hen', 'cock', 'rooster', 'chicken', 'fowl'] },
+  { sk:'Drevený plot', emoji:'🪵', keywords:['picket fence', 'worm fence', 'rail fence', 'fence'] },
+  { sk:'Poleno / Drevo', emoji:'🪵', keywords:['log', 'firewood', 'timber', 'lumber'] },
+  { sk:'Lavička', emoji:'🪑', keywords:['park bench', 'bench', 'seat'] },
+  { sk:'Kvetináč', emoji:'🪴', keywords:['pot', 'flowerpot', 'vase'] },
+  { sk:'Sud', emoji:'🛢️', keywords:['barrel', 'cask', 'water barrel', 'drum'] },
+  { sk:'Metla', emoji:'🧹', keywords:['broom', 'mop', 'swab'] },
+  { sk:'Bicykel', emoji:'🚲', keywords:['bicycle-built-for-two', 'tandem bicycle', 'mountain bike', 'bike', 'bicycle'] },
+  { sk:'Pneumatika', emoji:'⭕', keywords:['tire', 'tyre', 'car wheel', 'wheel'] },
+  { sk:'Schody', emoji:'🪜', keywords:['staircase', 'stairway', 'steps'] },
+  { sk:'Hydrant', emoji:'🚨', keywords:['fire hydrant', 'fireplug', 'hydrant'] },
+  { sk:'Poštová schránka', emoji:'📬', keywords:['mailbox', 'letterbox', 'mail slot'] },
+  { sk:'Smetiak', emoji:'🗑️', keywords:['trash can', 'garbage can', 'wastebin', 'ashcan', 'recycling bin'] }
 ];
 
-/* ══════════════════════════════════════
-   STATE
-══════════════════════════════════════ */
-let model         = null;
-let gameState     = null;
-let timerHandle   = null;
-let autoSaveHdl   = null;
-let offlineHdl    = null;
-let activeCellIdx = null;
-let videoStream   = null;
-let firstPlay     = true;
-let isCapturing   = false;
+let model, gameState, timerHandle, videoStream, activeCellIdx;
 
-/* ══════════════════════════════════════
-   INIT
-══════════════════════════════════════ */
 async function initApp() {
-  try { emailjs.init(CONFIG.emailjs_public_key); } catch(e) {}
-
-  const saved = loadSavedGame();
-  if (saved) {
-    document.getElementById('continueBtn').style.display = 'flex';
-    document.getElementById('playerName').value = saved.player || '';
-  }
-
-  let pct = 0;
-  const ticker = setInterval(() => {
-    pct = Math.min(pct + (pct < 70 ? 5 : 1), 91);
-    document.getElementById('aiProgress').style.width = pct + '%';
-    document.getElementById('aiPercent').textContent  = Math.round(pct) + '%';
-  }, 280);
+  emailjs.init(CONFIG.emailjs_public_key);
+  const saved = JSON.parse(localStorage.getItem('kukovske_bingo_save'));
+  if(saved) document.getElementById('continueBtn').style.display = 'block';
 
   try {
     model = await mobilenet.load({ version: 2, alpha: 1.0 });
-    clearInterval(ticker);
     document.getElementById('aiProgress').style.width = '100%';
-    document.getElementById('aiPercent').textContent  = '100%';
-    const btn = document.getElementById('startBtn');
-    btn.disabled    = false;
-    btn.textContent = '▶ ZAČAŤ HRU';
-  } catch(err) {
-    clearInterval(ticker);
-    toast('❌ Chyba načítania AI. Skontroluj internet.', 5000);
-    console.error(err);
-  }
+    document.getElementById('aiPercent').textContent = '100%';
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('startBtn').textContent = '▶ ZAČAŤ HRU';
+  } catch(e) { alert("Chyba AI. Skús refresh."); }
 }
 
-/* ══════════════════════════════════════
-   GAME FLOW
-══════════════════════════════════════ */
 function handleStartBtn() {
   const name = document.getElementById('playerName').value.trim();
-  if (!name)  { toast('👤 Zadaj svoje meno!'); document.getElementById('playerName').focus(); return; }
-  if (!model) { toast('⏳ AI model sa ešte načítava…'); return; }
-  startNewGame(name);
-}
-
-function startNewGame(playerName) {
+  if(!name) { alert("Zadaj meno!"); return; }
+  
+  // TEN DÔLEŽITÝ ALERT
+  alert("Rada pre hráča:\n\nKeď fotíš predmet, snaž sa, aby bol dobre osvetlený, v strede záberu a nehýb sa, kým AI analyzuje fotku. Ak ho AI na prvýkrát nepozná, skús zmeniť uhol!");
+  
   const shuffled = [...ALL_ITEMS].sort(() => Math.random() - 0.5);
-  gameState = { player: playerName, grid: shuffled, found: new Set(), startTime: Date.now(), bingoAchieved: false };
-  renderBoard();
+  gameState = { player: name, grid: shuffled, found: [], startTime: Date.now() };
+  saveAndStart();
+}
+
+function saveAndStart() {
   showScreen('game');
-  startTimer();
-  startAutoSave();
-  if (firstPlay) {
-    firstPlay = false;
-    setTimeout(() => toast('📸 Tip: Dobrý jas a stabilná ruka = lepšie AI!', 5000), 1000);
-  }
-}
-
-function continueGame() {
-  const saved = loadSavedGame();
-  if (!saved) { toast('Žiadna uložená hra.'); return; }
-  if (!model) { toast('⏳ AI model sa ešte načítava…'); return; }
-  saved.found = new Set(saved.found || []);
-  gameState = saved;
   renderBoard();
-  showScreen('game');
   startTimer();
-  startAutoSave();
-  toast('▶ Hra obnovená!', 2000);
 }
 
-function resetGame() {
-  clearInterval(timerHandle);
-  clearInterval(autoSaveHdl);
-  clearInterval(offlineHdl);
-  stopVideoStream();
-  gameState = null;
-  localStorage.removeItem('kukovske_bingo_save');
-  stopConfetti();
-  showScreen('setup');
-}
-
-/* ══════════════════════════════════════
-   RENDER BOARD
-══════════════════════════════════════ */
 function renderBoard() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
   gameState.grid.forEach((item, idx) => {
     const cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.id = `cell-${idx}`;
-    if (gameState.found.has(idx)) {
-      cell.classList.add('found');
-      const photoData = getSavedPhoto(idx);
-      if (photoData) {
-        const img = document.createElement('img');
-        img.className = 'cell-photo'; img.src = photoData;
-        cell.appendChild(img);
-      }
-      const check = document.createElement('div');
-      check.className = 'cell-check'; check.textContent = '✓';
-      cell.appendChild(check);
+    cell.className = 'cell' + (gameState.found.includes(idx) ? ' found' : '');
+    if(gameState.found.includes(idx)) {
+      const img = document.createElement('img');
+      img.className = 'cell-photo';
+      img.src = localStorage.getItem(`photo_${gameState.player}_${idx}`);
+      cell.appendChild(img);
     } else {
-      const label = document.createElement('div');
-      label.className = 'cell-label';
-      label.textContent = item.emoji + '\n' + item.sk;
-      cell.appendChild(label);
-      cell.addEventListener('click', () => openCamera(idx));
+      cell.innerHTML = `<div class="cell-label">${item.emoji}\n${item.sk}</div>`;
+      cell.onclick = () => openCamera(idx);
     }
     grid.appendChild(cell);
   });
-  updateProgress();
-  highlightBingoLines();
 }
 
-function updateProgress() {
-  const c = gameState.found.size;
-  document.getElementById('progressCount').textContent = c + ' / 25';
-  document.getElementById('progressFill').style.width  = (c / 25 * 100) + '%';
-}
-
-/* ══════════════════════════════════════
-   CAMERA
-══════════════════════════════════════ */
-async function openCamera(cellIdx) {
-  if (!model || gameState.found.has(cellIdx)) return;
-  activeCellIdx = cellIdx;
-  isCapturing   = false;
-  const item    = gameState.grid[cellIdx];
-
-  document.getElementById('camTargetName').textContent = item.emoji + ' ' + item.sk;
-  setCamStatus('', 'Pripravujem kameru…');
+async function openCamera(idx) {
+  activeCellIdx = idx;
+  document.getElementById('camTargetName').textContent = gameState.grid[idx].sk;
   document.getElementById('cameraOverlay').classList.remove('hidden');
-  document.getElementById('captureBtn').disabled = false;
-
-  document.querySelectorAll('.cell.scanning').forEach(c => c.classList.remove('scanning'));
-  const cellEl = document.getElementById(`cell-${cellIdx}`);
-  if (cellEl) cellEl.classList.add('scanning');
-
-  try {
-    videoStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-    });
-    const video = document.getElementById('videoPreview');
-    video.srcObject = videoStream;
-    await video.play();
-    setCamStatus('', 'Namier na: ' + item.sk);
-  } catch(err) {
-    setCamStatus('error', '❌ Kamera nedostupná — povoľ prístup');
-    toast('Povoľ prístup ku kamere v nastaveniach prehliadača.', 4000);
-    console.error('Camera:', err);
-  }
+  videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+  document.getElementById('videoPreview').srcObject = videoStream;
 }
 
 function closeCamera() {
-  stopVideoStream();
+  if(videoStream) videoStream.getTracks().forEach(t => t.stop());
   document.getElementById('cameraOverlay').classList.add('hidden');
-  document.querySelectorAll('.cell.scanning').forEach(c => c.classList.remove('scanning'));
-  activeCellIdx = null;
-  isCapturing   = false;
-}
-
-function stopVideoStream() {
-  if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
-  const video = document.getElementById('videoPreview');
-  if (video) video.srcObject = null;
 }
 
 async function capturePhoto() {
-  if (activeCellIdx === null || !videoStream || isCapturing) return;
-  isCapturing = true;
-  document.getElementById('captureBtn').disabled = true;
-
-  const video  = document.getElementById('videoPreview');
+  const video = document.getElementById('videoPreview');
   const canvas = document.getElementById('snapCanvas');
-  canvas.width  = video.videoWidth  || 640;
-  canvas.height = video.videoHeight || 480;
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0);
-
+  
+  document.getElementById('camStatus').textContent = "🔍 AI skúma...";
+  const preds = await model.classify(canvas);
   const item = gameState.grid[activeCellIdx];
-  setCamStatus('analyzing', '🔍 AI analyzuje…');
-  setStatus('🔍', `AI analyzuje: ${item.sk}…`);
+  
+  const found = preds.some(p => p.probability >= CONFIG.threshold && item.keywords.some(k => p.className.toLowerCase().includes(k)));
 
-  try {
-    const predictions = await model.classify(canvas);
-    console.log('[AI]', item.sk, '→', predictions.slice(0,3).map(p => p.className + ' ' + (p.probability*100).toFixed(1) + '%').join(' | '));
-
-    if (matchesPredictions(predictions, item.keywords)) {
-      setCamStatus('success', `✅ Nájdené: ${item.sk}!`);
-      setStatus('✅', `Nájdené: ${item.sk}!`);
-
-      const photoData = canvas.toDataURL('image/jpeg', 0.65);
-      savePhoto(activeCellIdx, photoData);
-      gameState.found.add(activeCellIdx);
-      saveGame();
-      updateProgress();
-
-      // Update cell
-      const cellEl = document.getElementById(`cell-${activeCellIdx}`);
-      if (cellEl) {
-        cellEl.classList.remove('scanning'); cellEl.classList.add('found');
-        cellEl.innerHTML = '';
-        const img = document.createElement('img'); img.className = 'cell-photo'; img.src = photoData; cellEl.appendChild(img);
-        const chk = document.createElement('div'); chk.className = 'cell-check'; chk.textContent = '✓'; cellEl.appendChild(chk);
-        const fresh = cellEl.cloneNode(true); cellEl.parentNode.replaceChild(fresh, cellEl);
-      }
-
-      setTimeout(() => {
-        closeCamera();
-        highlightBingoLines();
-        if (!gameState.bingoAchieved && checkBingo()) {
-          gameState.bingoAchieved = true;
-          saveGame();
-          celebrateBingo();
-        }
-      }, 700);
-
-    } else {
-      const top = predictions[0]?.className || 'neznáme';
-      setCamStatus('error', `❌ AI vidí: "${top}". Skús znova!`);
-      setStatus('❌', `AI vidí: "${top}" — nie ${item.sk}`);
-      document.getElementById('captureBtn').disabled = false;
-      isCapturing = false;
-    }
-  } catch(err) {
-    setCamStatus('error', '⚠️ Chyba AI. Skús znova.');
-    document.getElementById('captureBtn').disabled = false;
-    isCapturing = false;
-    console.error('Classify:', err);
+  if(found) {
+    const data = canvas.toDataURL('image/jpeg', 0.6);
+    localStorage.setItem(`photo_${gameState.player}_${activeCellIdx}`, data);
+    gameState.found.push(activeCellIdx);
+    localStorage.setItem('kukovske_bingo_save', JSON.stringify(gameState));
+    closeCamera();
+    renderBoard();
+    if(checkBingo()) victory();
+  } else {
+    document.getElementById('camStatus').textContent = "❌ AI vidí: " + preds[0].className;
+    setTimeout(() => document.getElementById('camStatus').textContent = "Skús iný uhol!", 2000);
   }
 }
 
-function matchesPredictions(preds, keywords) {
-  for (const p of preds) {
-    if (p.probability < CONFIG.threshold) continue;
-    const lbl = p.className.toLowerCase();
-    for (const kw of keywords) { if (lbl.includes(kw.toLowerCase())) return true; }
-  }
-  return false;
-}
-
-/* ══════════════════════════════════════
-   BINGO
-══════════════════════════════════════ */
-function getBingoLines() {
-  const L = [];
-  for (let r=0;r<5;r++) L.push([r*5,r*5+1,r*5+2,r*5+3,r*5+4]);
-  for (let c=0;c<5;c++) L.push([c,c+5,c+10,c+15,c+20]);
-  L.push([0,6,12,18,24]); L.push([4,8,12,16,20]);
-  return L;
-}
 function checkBingo() {
-  const f = gameState.found;
-  return getBingoLines().some(line => line.every(i => f.has(i)));
-}
-function highlightBingoLines() {
-  if (!gameState) return;
-  document.querySelectorAll('.cell.bingo-line').forEach(c => c.classList.remove('bingo-line'));
-  getBingoLines().forEach(line => {
-    if (line.every(i => gameState.found.has(i))) {
-      line.forEach(i => { const el = document.getElementById(`cell-${i}`); if(el) el.classList.add('bingo-line'); });
-    }
-  });
+  const lines = [[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];
+  return lines.some(l => l.every(i => gameState.found.includes(i)));
 }
 
-/* ══════════════════════════════════════
-   VICTORY
-══════════════════════════════════════ */
-function celebrateBingo() {
-  clearInterval(timerHandle);
-  const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
-  const timeStr  = formatTime(elapsed);
-  document.getElementById('victoryName').textContent        = gameState.player;
-  document.getElementById('victoryTime').textContent        = timeStr;
-  document.getElementById('victoryEmailStatus').textContent = '📧 Odosielam výsledok…';
-  document.getElementById('victoryEmailStatus').className   = 'victory-email-status';
+function victory() {
+  const time = document.getElementById('timerDisplay').textContent;
+  document.getElementById('victoryName').textContent = gameState.player;
+  document.getElementById('victoryTime').textContent = time;
   showScreen('victory');
-  launchConfetti();
-  sendResultEmail(gameState.player, timeStr, elapsed);
+  emailjs.send(CONFIG.emailjs_service_id, CONFIG.emailjs_template_id, { player_name: gameState.player, finish_time: time });
 }
 
-/* ══════════════════════════════════════
-   EMAIL
-══════════════════════════════════════ */
-async function sendResultEmail(player, timeStr, seconds) {
-  const params = {
-    player_name: player, finish_time: timeStr,
-    total_seconds: seconds, found_count: gameState.found.size,
-    date: new Date().toLocaleString('sk-SK'),
-  };
-  const el = document.getElementById('victoryEmailStatus');
-  if (!navigator.onLine) {
-    queueEmail(params); el.textContent = '📶 Offline — odošle sa keď bude sieť'; el.className = 'victory-email-status queued';
-    startOfflineRetry(); return;
-  }
-  try {
-    await emailjs.send(CONFIG.emailjs_service_id, CONFIG.emailjs_template_id, params);
-    el.textContent = '✅ Výsledok odoslaný!'; el.className = 'victory-email-status sent';
-  } catch(err) {
-    console.error('EmailJS:', err);
-    queueEmail(params); el.textContent = '📶 Uložené — odošle sa neskôr'; el.className = 'victory-email-status queued';
-    startOfflineRetry();
-  }
-}
-function queueEmail(p) { localStorage.setItem('kukovske_pending_email', JSON.stringify(p)); }
-function startOfflineRetry() { clearInterval(offlineHdl); offlineHdl = setInterval(sendPendingEmail, CONFIG.offlineRetryInterval); }
-async function sendPendingEmail() {
-  const raw = localStorage.getItem('kukovske_pending_email');
-  if (!raw || !navigator.onLine) return;
-  try {
-    await emailjs.send(CONFIG.emailjs_service_id, CONFIG.emailjs_template_id, JSON.parse(raw));
-    localStorage.removeItem('kukovske_pending_email'); clearInterval(offlineHdl);
-    const el = document.getElementById('victoryEmailStatus');
-    if (el) { el.textContent = '✅ Výsledok odoslaný!'; el.className = 'victory-email-status sent'; }
-  } catch(e) {}
-}
-
-/* ══════════════════════════════════════
-   TIMER
-══════════════════════════════════════ */
 function startTimer() {
   clearInterval(timerHandle);
   timerHandle = setInterval(() => {
-    if (!gameState) return;
-    document.getElementById('timerDisplay').textContent = formatTime(Math.floor((Date.now()-gameState.startTime)/1000));
+    const sec = Math.floor((Date.now() - gameState.startTime) / 1000);
+    document.getElementById('timerDisplay').textContent = Math.floor(sec/60) + ":" + String(sec%60).padStart(2,'0');
   }, 1000);
 }
-function formatTime(s) { return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
 
-/* ══════════════════════════════════════
-   SAVE / LOAD
-══════════════════════════════════════ */
-function startAutoSave() { clearInterval(autoSaveHdl); autoSaveHdl = setInterval(saveGame, CONFIG.autoSaveInterval); }
-function saveGame() {
-  if (!gameState) return;
-  try { localStorage.setItem('kukovske_bingo_save', JSON.stringify({ player:gameState.player, grid:gameState.grid, found:[...gameState.found], startTime:gameState.startTime, bingoAchieved:gameState.bingoAchieved })); } catch(e) {}
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
 }
-function loadSavedGame() {
-  try { const d=JSON.parse(localStorage.getItem('kukovske_bingo_save')); return d&&d.grid&&d.player?d:null; } catch{return null;}
-}
-function savePhoto(idx, data) { try { localStorage.setItem(`bingo_photo_${gameState.player}_${idx}`, data); } catch(e) {} }
-function getSavedPhoto(idx)   { return localStorage.getItem(`bingo_photo_${gameState.player}_${idx}`) || null; }
 
-/* ══════════════════════════════════════
-   UI HELPERS
-══════════════════════════════════════ */
-function setStatus(icon, text) { document.getElementById('statusIcon').textContent=icon; document.getElementById('statusText').textContent=text; }
-function setCamStatus(type, text) { const el=document.getElementById('camStatus'); el.textContent=text; el.className=type||''; }
-let _toastT=null;
-function toast(msg, dur=2500) { const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toastT); _toastT=setTimeout(()=>el.classList.remove('show'),dur); }
-function showScreen(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('hidden',s.id!==id)); }
+function resetGame() { localStorage.removeItem('kukovske_bingo_save'); location.reload(); }
 
-/* ══════════════════════════════════════
-   CONFETTI
-══════════════════════════════════════ */
-let _cp=[],_cr=false,_craf=null;
-function launchConfetti() {
-  const cv=document.getElementById('confettiCanvas'); cv.width=innerWidth; cv.height=innerHeight;
-  const ctx=cv.getContext('2d'); const C=['#f1c40f','#2ecc71','#e74c3c','#3498db','#e67e22','#9b59b6','#1abc9c','#fff'];
-  _cp=Array.from({length:150},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height-cv.height,r:Math.random()*7+3,d:Math.random()*4+1.5,color:C[Math.floor(Math.random()*C.length)],tilt:0,ta:0,ti:Math.random()*.1+.03}));
-  _cr=true;
-  (function draw(){
-    if(!_cr)return; ctx.clearRect(0,0,cv.width,cv.height);
-    _cp.forEach(p=>{ctx.beginPath();ctx.lineWidth=p.r;ctx.strokeStyle=p.color;ctx.moveTo(p.x+p.tilt+p.r/4,p.y);ctx.lineTo(p.x+p.tilt,p.y+p.tilt+p.r/4);ctx.stroke();p.y+=p.d;p.ta+=p.ti;p.tilt=12*Math.sin(p.ta);if(p.y>cv.height){p.y=-10;p.x=Math.random()*cv.width;}});
-    _craf=requestAnimationFrame(draw);
-  })();
-}
-function stopConfetti() { _cr=false; cancelAnimationFrame(_craf); const cv=document.getElementById('confettiCanvas'); cv.getContext('2d').clearRect(0,0,cv.width,cv.height); }
-
-/* ══════════════════════════════════════
-   BOOT
-══════════════════════════════════════ */
-window.addEventListener('DOMContentLoaded', initApp);
-window.addEventListener('online', sendPendingEmail);
-window.addEventListener('resize', ()=>{ const c=document.getElementById('confettiCanvas'); c.width=innerWidth; c.height=innerHeight; });
+window.onload = initApp;
 </script>
 </body>
 </html>
