@@ -10,9 +10,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
     <style>
-        :root { --main-color: #2c3e50; --win-color: #27ae60; --bg-color: #eef2f3; --accent: #f39c12; }
+        :root { --main-color: #2c3e50; --win-color: #27ae60; --bg-color: #eef2f3; --accent: #f1c40f; }
         
-        /* PÔVODNÝ LOOK */
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background: var(--bg-color); margin: 0; padding: 10px; -webkit-user-select: none; }
         
         #setup-screen { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
@@ -34,21 +33,30 @@
         
         input[type="text"] { padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; border: 2px solid #ddd; width: 80%; max-width: 300px; }
         button { padding: 12px 30px; font-size: 18px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        button:disabled { background: #bdc3c7; }
 
-        /* --- TMAVÝ FOŤÁK (VYLEPŠENÝ) --- */
+        /* --- UPRAVENÝ FOŤÁK --- */
         #cameraOverlay { 
             position: fixed; inset: 0; background: #1a2535; z-index: 1000; 
             display: none; flex-direction: column; align-items: center; justify-content: space-between; 
             padding: 40px 20px; color: white;
         }
-        .target-box { background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); padding: 12px; width: 85%; text-align: left; }
-        .target-box h2 { margin: 0; color: var(--accent); font-size: 24px; }
+
+        /* ŽLTÝ RÁMČEK PRE CIEL */
+        .target-box { 
+            border: 3px solid var(--accent); 
+            background: rgba(241, 196, 15, 0.1); 
+            padding: 15px; 
+            width: 85%; 
+            border-radius: 12px;
+            text-align: center;
+        }
+        .target-box small { color: #eee; text-transform: uppercase; font-size: 10px; display: block; margin-bottom: 5px; }
+        .target-box h2 { margin: 0; color: var(--accent); font-size: 28px; text-transform: uppercase; }
         
         .video-container { position: relative; width: 100%; max-width: 340px; aspect-ratio: 1; border-radius: 20px; overflow: hidden; border: 2px solid #444; }
         video { width: 100%; height: 100%; object-fit: cover; }
-        .scan-line { position: absolute; width: 100%; height: 3px; background: var(--accent); top: 0; animation: scan 2.5s linear infinite; box-shadow: 0 0 15px var(--accent); }
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        
+        /* SCAN PÁSIK ODSTRÁNENÝ */
 
         #aiStatus { font-size: 14px; color: #bbb; min-height: 45px; margin-top: 10px; }
         #aiStatus b { color: var(--accent); }
@@ -57,7 +65,6 @@
         .btn-capture { flex: 2; background: var(--win-color); color: white; border: none; padding: 18px; border-radius: 15px; font-size: 18px; font-weight: bold; }
         .btn-close { flex: 1; background: #333; color: white; border: none; border-radius: 15px; font-size: 20px; }
 
-        /* BINGO OVERLAY */
         #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); color: #f1c40f; z-index: 2000; align-items: center; justify-content: center; flex-direction: column; font-size: 40px; font-weight: bold; }
         .hidden { display: none !important; }
     </style>
@@ -69,7 +76,6 @@
         <p>Zadaj meno a hľadaj objekty!</p>
         <input type="text" id="player-name" placeholder="Tvoje meno">
         <button id="start-btn" onclick="startGame()" disabled>NAČÍTAM AI...</button>
-        <p id="load-msg" style="font-size: 12px; color: #7f8c8d; margin-top: 20px;">Pripravujem AI mozog...</p>
     </div>
 
     <div id="game-ui" class="hidden">
@@ -80,15 +86,14 @@
 
     <div id="cameraOverlay">
         <div class="target-box">
-            <small style="color:#888; text-transform:uppercase;">Aktuálny cieľ:</small>
+            <small>Tvoj aktuálny cieľ:</small>
             <h2 id="targetName">Predmet</h2>
         </div>
         <div class="video-container">
             <video id="video" playsinline autoplay muted></video>
-            <div class="scan-line"></div>
         </div>
         <div style="width:100%;">
-            <div id="aiStatus">Zamier na predmet...</div>
+            <div id="aiStatus">Zamier na predmet a stlač analyzovať</div>
             <div class="cam-btns">
                 <button class="btn-capture" onclick="takePhoto()">📸 ANALYZOVAŤ</button>
                 <button class="btn-close" onclick="closeCamera()">✕</button>
@@ -120,29 +125,26 @@
         { sk: "Bicykel", en: ["bicycle", "bike"] }, { sk: "Lavička", en: ["bench"] },
         { sk: "Traktor", en: ["tractor"] }, { sk: "Schody", en: ["stairs"] },
         { sk: "Sliepka", en: ["hen", "chicken"] }, { sk: "Schránka", en: ["mailbox", "postbox"] },
-        { sk: "Pneumatika", en: ["tire", "wheel"] }, { sk: "Traktor", en: ["tractor"] },
-        { sk: "Smetiak", en: ["trash can"] }, { sk: "Brána", en: ["gate"] },
+        { sk: "Pneumatika", en: ["tire", "wheel"] }, { sk: "Brána", en: ["gate"] },
         { sk: "Kladivo", en: ["hammer"] }, { sk: "Kosačka", en: ["mower"] },
         { sk: "Sud", en: ["barrel"] }, { sk: "Metla", en: ["broom"] },
-        { sk: "Rebrík", en: ["ladder"] }
+        { sk: "Rebrík", en: ["ladder"] }, { sk: "Vlčiak", en: ["German shepherd", "dog"] },
+        { sk: "Kvetináč", en: ["pot", "flowerpot"] }
     ];
 
     async function initApp() {
         try {
             model = await mobilenet.load();
-            document.getElementById('load-msg').innerText = "✅ AI Pripravené!";
             document.getElementById('start-btn').disabled = false;
             document.getElementById('start-btn').innerText = "SPUSTIŤ HRU";
-        } catch (e) { document.getElementById('load-msg').innerText = "❌ Chyba AI."; }
+        } catch (e) { console.error("AI error"); }
     }
 
     function startGame() {
         playerName = document.getElementById('player-name').value.trim();
         if(!playerName) return alert("Zadaj meno!");
-        
         startTime = new Date();
         gameState = bingoData.sort(() => Math.random() - 0.5).map(item => ({...item, done: false, img: null}));
-
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('game-ui').classList.remove('hidden');
         renderBoard();
@@ -176,7 +178,7 @@
         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
 
-        document.getElementById('aiStatus').innerText = "🔍 AI Analyzuje...";
+        document.getElementById('aiStatus').innerText = "🔍 Analyzujem...";
         const preds = await model.classify(canvas);
         const top = preds[0];
         const percent = Math.round(top.probability * 100);
