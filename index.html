@@ -1,92 +1,33 @@
 <!DOCTYPE html>
 <html lang="sk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dedinské Bingo 🎯</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-
-    <style>
-        :root {
-            --primary: #27ae60;
-            --accent: #f39c12;
-            --dark: #1a2535;
-            --bg: #ffffff;
-        }
-
-        body { 
-            font-family: sans-serif; 
-            background-color: var(--bg); 
-            margin: 0; padding: 20px; 
-            display: flex; flex-direction: column; align-items: center; 
-            color: #333;
-        }
-        
-        /* --- ÚPLNE JEDNODUCHÝ VIZUÁL (Podľa fotky) --- */
-        h1 { font-size: 28px; margin-bottom: 5px; font-weight: bold; }
-        .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
-
-        #setup { width: 100%; max-width: 350px; text-align: center; }
-        input { 
-            width: 100%; padding: 12px; margin-bottom: 15px; 
-            border: 1px solid #ccc; border-radius: 5px; font-size: 16px; 
-            box-sizing: border-box;
-        }
-        .btn-start { 
-            background: var(--primary); color: white; border: none; 
-            padding: 15px; border-radius: 5px; cursor: pointer; 
-            font-size: 18px; font-weight: bold; width: 100%; 
-        }
-        .btn-start:disabled { background: #ccc; }
-
-        /* --- MRIEŽKA --- */
-        #timer { font-size: 32px; font-weight: bold; margin-bottom: 20px; font-family: monospace; }
-        #grid { 
-            display: grid; grid-template-columns: repeat(5, 1fr); 
-            gap: 5px; width: 100%; max-width: 400px; 
-        }
-        .cell { 
-            aspect-ratio: 1; background: #fff; border: 1px solid #ddd; 
-            border-radius: 4px; display: flex; align-items: center; 
-            justify-content: center; font-size: 8px; font-weight: bold; 
-            text-align: center; cursor: pointer; position: relative; overflow: hidden;
-        }
-        .cell.found { border-color: var(--primary); background: #e8f5e9; }
-        .cell img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-        .cell span { z-index: 2; padding: 2px; }
-
-        /* --- TEN "DOSŤ DOBRÝ" FOŤÁK (Tmavý štýl) --- */
-        #cameraOverlay { 
-            position: fixed; inset: 0; background: var(--dark); z-index: 1000; 
-            display: none; flex-direction: column; align-items: center; justify-content: space-between; 
-            padding: 40px 20px; color: white;
-        }
-        .target-label { background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); padding: 10px 20px; width: 80%; }
-        .target-label small { color: #aaa; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
-        .target-label h2 { margin: 0; color: var(--accent); }
-
-        .video-box { position: relative; width: 100%; max-width: 320px; aspect-ratio: 1; border-radius: 15px; overflow: hidden; border: 2px solid #444; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        .scan-line { position: absolute; width: 100%; height: 2px; background: var(--accent); top: 0; animation: scan 2s linear infinite; box-shadow: 0 0 10px var(--accent); }
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
-
-        .cam-ui { text-align: center; width: 100%; }
-        #aiStatus { font-size: 14px; color: #ccc; margin-bottom: 20px; min-height: 40px; }
-        #aiStatus b { color: var(--accent); }
-        
-        .cam-btns { display: flex; gap: 10px; width: 100%; max-width: 320px; margin: 0 auto; }
-        .btn-capture { flex: 3; background: var(--primary); color: white; border: none; padding: 18px; border-radius: 10px; font-size: 18px; font-weight: bold; }
-        .btn-close { flex: 1; background: #333; color: white; border: none; border-radius: 10px; font-size: 20px; }
-
-        .hidden { display: none !important; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <title>Kúkovské Bingo APP</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        :root { --main-color: #2c3e50; --win-color: #27ae60; --bg-color: #eef2f3; }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: var(--bg-color); margin: 0; padding: 10px; -webkit-user-select: none; }
+        #setup-screen { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 500px; margin: auto; padding: 10px; }
+        .cell { aspect-ratio: 1; border: 2px solid var(--main-color); background: white; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; position: relative; overflow: hidden; font-weight: bold; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .cell img { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+        .cell span { z-index: 2; background: rgba(255,255,255,0.8); padding: 2px 4px; border-radius: 3px; text-transform: uppercase; }
+        .completed { border-color: var(--win-color); background: #d4edda; pointer-events: none; }
+        #status { margin: 10px; padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; min-height: 50px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); color: #f1c40f; z-index: 200; align-items: center; justify-content: center; flex-direction: column; font-size: 40px; font-weight: bold; }
+        input[type="text"] { padding: 12px; font-size: 16px; margin: 15px; border-radius: 8px; border: 2px solid #ddd; width: 80%; max-width: 300px; }
+        button { padding: 12px 30px; font-size: 18px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:disabled { background: #bdc3c7; cursor: not-allowed; }
+    </style>
 </head>
 <body>
 
-    <h1>Dedinské Bingo 🎯</h1>
+    <h1>📍 Kúkovské Bingo</h1>
     <div class="subtitle">Nájdi predmety z mriežky v okolí</div>
 
     <div id="setup">
