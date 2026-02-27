@@ -10,32 +10,25 @@
     <style>
         :root { --main-color: #2c3e50; --win-color: #27ae60; --err-color: #e74c3c; --bg-color: #f4f7f8; --accent: #f1c40f; }
         
-        /* Absolútne vycentrovanie úvodnej obrazovky */
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background: var(--bg-color); margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; -webkit-user-select: none; }
         
         #setup-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; width: 100%; padding: 20px; box-sizing: border-box; }
-        
         #game-ui { width: 100%; max-width: 500px; padding: 10px; box-sizing: border-box; align-self: center; }
-
         #timer-display { font-size: 24px; font-weight: bold; color: #d35400; margin: 10px 0; background: white; padding: 5px 20px; border-radius: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: inline-block; }
 
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px auto; }
         .cell { aspect-ratio: 1; border: 2px solid var(--main-color); background: white; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; position: relative; overflow: hidden; font-weight: bold; border-radius: 8px; }
-        
-        /* Zabezpečí nezdeformovaný obrázok v mriežke */
-        .cell img { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+        .cell img { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; image-rendering: -webkit-optimize-contrast; }
         .cell span { z-index: 2; background: rgba(255,255,255,0.85); padding: 1px 3px; border-radius: 3px; text-transform: uppercase; }
         .completed { border-color: var(--win-color); background: #d4edda; }
         
         #status { padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; width: 90%; margin: 10px auto; }
         
-        /* Overlay Foťáku - VYCENTROVANÝ VZHĽAD */
         #cameraOverlay { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 20px; }
         #video, #photoPreview { width: 90%; max-width: 400px; border-radius: 15px; border: 2px solid var(--accent); display: none; object-fit: cover; }
         .zoom-container { width: 80%; max-width: 300px; margin: 20px auto; display: flex; align-items: center; justify-content: center; gap: 15px; padding: 0 10px; box-sizing: border-box; color: #fff; font-size: 20px; font-weight: bold; }
         input[type=range] { flex: 1; margin: 0; cursor: pointer; }
         
-        /* Bingo / Admin Panel Overlay */
         #bingoOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); color: white; z-index: 2000; flex-direction: column; padding: 20px; overflow-y: auto; align-items: center; justify-content: center; }
         
         .win-photos { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 20px 0; }
@@ -44,17 +37,15 @@
         .photo-item img { width: 80px; height: 80px; border-radius: 6px; object-fit: cover; }
         .photo-item label { font-size: 10px; margin-top: 5px; color: var(--accent); font-weight: bold; }
 
-        /* Tlačidlá */
         button { padding: 12px 25px; font-size: 16px; background: var(--win-color); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .btn-red { background: var(--err-color); }
         .btn-blue { background: #3498db; }
         input { padding: 12px; border-radius: 8px; border: 1px solid #ccc; text-align: center; font-size: 16px; }
         .hidden { display: none !important; }
 
-        /* Skrytá šablóna certifikátu */
         #certificate-template {
             position: absolute; left: -9999px; top: -9999px;
-            width: 600px; background: white; padding: 30px; text-align: center; color: #333; border: 10px solid var(--main-color); box-sizing: border-box;
+            width: 800px; background: white; padding: 40px; text-align: center; color: #333; border: 15px solid var(--main-color); box-sizing: border-box;
         }
     </style>
 </head>
@@ -63,13 +54,11 @@
     <div id="setup-screen">
         <h1 style="font-size: 32px; color: var(--main-color); margin: 0;">📍 Kúkovské Bingo</h1>
         <p style="color: #7f8c8d; margin: 10px 0 30px 0;">Nájdi všetky predmety v rade!</p>
-        
         <div id="new-game-box">
             <input type="text" id="player-name" placeholder="Tvoje meno" style="width: 280px; margin-bottom: 10px;">
             <br>
             <button onclick="startGame(false)">ŠTARTOVAŤ HRU</button>
         </div>
-        
         <div id="resume-box" class="hidden" style="margin-top: 30px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
             <p style="margin: 0 0 15px 0; font-weight: bold; color: var(--main-color);">Máš rozohranú hru!</p>
             <button onclick="startGame(true)" class="btn-blue">POKRAČOVAŤ</button>
@@ -85,27 +74,21 @@
 
     <div id="cameraOverlay">
         <h2 id="targetName" style="color: var(--accent); margin-bottom: 20px;">Odfotiť</h2>
-        
         <video id="video" playsinline autoplay style="display: block;"></video>
-        
         <img id="photoPreview" src="" alt="Náhľad">
-
         <div id="zoomControls" class="zoom-container">
             <span>-</span>
             <input type="range" id="zoomRange" min="1" max="5" step="0.1" value="1">
             <span>+</span>
         </div>
-
         <div id="captureBtns" style="margin-top: 20px;">
             <button onclick="captureImage()" style="background:white; color:black; padding:15px 30px; margin-right:10px;">📸 ODFOTIŤ</button>
             <button onclick="closeCamera()" class="btn-red">ZRUŠIŤ</button>
         </div>
-
         <div id="confirmBtns" class="hidden" style="margin-top: 20px;">
-            <button onclick="usePhoto()" style="padding:15px 30px; margin-right:10px;">OK</button>
+            <button onclick="usePhoto()" style="padding:15px 30px; margin-right:10px;">✅OK</button>
             <button onclick="retakePhoto()" class="btn-red">ZNOVA</button>
         </div>
-
         <canvas id="canvas" style="display:none;"></canvas>
     </div>
 
@@ -113,13 +96,11 @@
         <div id="pending-validation">
             <h1 style="color:var(--accent); font-size: 45px; margin: 0;">🏆 BINGO! 🏆</h1>
             <p id="instruction-text" style="font-size: 20px; margin: 20px 0;">Daj skontrolovať vedúcemu</p>
-            
             <div id="admin-auth">
                 <input type="password" id="adminCode" placeholder="Kód vedúceho" style="width: 200px;">
                 <br><br>
                 <button onclick="unlockResults()">SKONTROLOVAŤ FOTKY</button>
             </div>
-
             <div id="admin-results" class="hidden">
                 <p style="color: var(--err-color); font-size: 13px; margin-top: 15px;">Kliknutím označ zlé fotky:</p>
                 <div class="win-photos" id="photo-gallery"></div>
@@ -129,7 +110,6 @@
                 </div>
             </div>
         </div>
-
         <div id="victory-final" class="hidden">
             <h1 style="color:var(--accent); font-size: 45px; margin: 0;">🏆 BINGO! 🏆</h1>
             <h1 style="color:var(--win-color); font-size:60px; margin: 10px 0;">VÍŤAZ!</h1>
@@ -143,14 +123,14 @@
     </div>
 
     <div id="certificate-template">
-        <h1 style="color: var(--main-color); font-size: 36px; margin-bottom: 5px;">KÚKOVSKÉ BINGO</h1>
+        <h1 style="color: var(--main-color); font-size: 42px; margin-bottom: 5px;">KÚKOVSKÉ BINGO</h1>
         <h2 style="color: #555; margin-top: 0;">CERTIFIKÁT VÍŤAZA</h2>
-        <hr style="border: 2px solid var(--accent); width: 80%; margin: 20px auto;">
-        <p style="font-size: 22px;">Hráč: <strong id="cert-name" style="color: var(--main-color);"></strong></p>
-        <p style="font-size: 24px; font-weight: bold; background: #eee; padding: 10px; border-radius: 10px;">Dosiahnutý čas: <span id="cert-time" style="color: #d35400;"></span></p>
-        <p style="margin-top: 25px; font-size: 18px; color: #666;">Víťazný rad fotiek:</p>
-        <div id="cert-photos" style="display: flex; gap: 15px; justify-content: center; margin-top: 15px;"></div>
-        <p style="margin-top: 40px; font-size: 14px; color: #999;">Vygenerované aplikáciou Kúkovské Bingo © 2026</p>
+        <hr style="border: 3px solid var(--accent); width: 80%; margin: 30px auto;">
+        <p style="font-size: 26px;">Hráč: <strong id="cert-name" style="color: var(--main-color);"></strong></p>
+        <p style="font-size: 28px; font-weight: bold; background: #eee; padding: 15px; border-radius: 10px;">Dosiahnutý čas: <span id="cert-time" style="color: #d35400;"></span></p>
+        <p style="margin-top: 30px; font-size: 20px; color: #666;">Víťazný rad fotiek:</p>
+        <div id="cert-photos" style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;"></div>
+        <p style="margin-top: 50px; font-size: 16px; color: #999;">Vygenerované aplikáciou Kúkovské Bingo © 2026</p>
     </div>
 
 <script>
@@ -209,7 +189,7 @@
         document.getElementById('cameraOverlay').style.display = 'flex';
         resetZoomUI(); retakePhoto();
         try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1920 } } });
             document.getElementById('video').srcObject = videoStream;
             videoTrack = videoStream.getVideoTracks()[0];
             const zoomInput = document.getElementById('zoomRange');
@@ -226,18 +206,20 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Vytvoriť štvorcový canvas (Center Crop)
+        // VYSOKÉ ROZLÍŠENIE PRE OSTRÉ FOTKY
         const size = Math.min(video.videoWidth, video.videoHeight);
-        canvas.width = 600;
-        canvas.height = 600;
+        canvas.width = 1200; 
+        canvas.height = 1200;
         
         const sx = (video.videoWidth - size) / 2;
         const sy = (video.videoHeight - size) / 2;
         
-        // Nakresliť orezaný štvorec
-        ctx.drawImage(video, sx, sy, size, size, 0, 0, 600, 600);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(video, sx, sy, size, size, 0, 0, 1200, 1200);
         
-        lastCapturedData = canvas.toDataURL('image/jpeg', 0.6);
+        // VYSOKÁ KVALITA JPEG (0.95)
+        lastCapturedData = canvas.toDataURL('image/jpeg', 0.95);
         document.getElementById('video').style.display = 'none';
         document.getElementById('zoomControls').style.display = 'none';
         document.getElementById('captureBtns').classList.add('hidden');
@@ -272,7 +254,6 @@
     function closeCamera() {
         if(videoStream) videoStream.getTracks().forEach(t => t.stop());
         document.getElementById('cameraOverlay').style.display = 'none';
-        resetZoomUI();
     }
 
     function checkBingo() {
@@ -336,19 +317,19 @@
         winningLineGlobal.forEach(idx => {
             const item = gameState[idx];
             const div = document.createElement('div');
-            div.style.cssText = "display:flex; flex-direction:column; align-items:center; width:90px;";
+            div.style.cssText = "display:flex; flex-direction:column; align-items:center; width:110px;";
             div.innerHTML = `
-                <img src="${item.img}" style="width:80px; height:80px; object-fit:cover; border:2px solid #333; border-radius:5px;">
-                <label style="font-size:10px; margin-top:3px; font-weight:bold; color:#555; text-transform:uppercase;">${item.name}</label>
+                <img src="${item.img}" style="width:100px; height:100px; object-fit:cover; border:2px solid #333; border-radius:5px;">
+                <label style="font-size:12px; margin-top:5px; font-weight:bold; color:#555; text-transform:uppercase;">${item.name}</label>
             `;
             certPhotosDiv.appendChild(div);
         });
 
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 600));
 
         const template = document.getElementById('certificate-template');
         try {
-            const canvas = await html2canvas(template, { scale: 2, backgroundColor: "#ffffff" });
+            const canvas = await html2canvas(template, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
             const image = canvas.toDataURL("image/png");
             const link = document.createElement('a');
             link.href = image;
