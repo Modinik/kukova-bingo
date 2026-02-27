@@ -7,10 +7,42 @@
     
     <style>
         :root { --main-color: #2c3e50; --win-color: #27ae60; --bg-color: #eef2f3; --accent: #f1c40f; }
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: var(--bg-color); margin: 0; padding: 10px; -webkit-user-select: none; }
         
-        #setup-screen { padding: 50px 20px; }
-        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-width: 500px; margin: auto; padding: 10px; }
+        /* Centruje celú stránku na stred */
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            text-align: center; 
+            background: var(--bg-color); 
+            margin: 0; 
+            padding: 0; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Vertikálne na stred */
+            align-items: center;    /* Horizontálne na stred */
+            min-height: 100vh;      /* Na celú výšku displeja */
+            -webkit-user-select: none; 
+        }
+        
+        #setup-screen { 
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #game-ui {
+            width: 100%;
+            max-width: 500px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 6px; 
+            margin: 15px auto; 
+        }
         
         .cell { 
             aspect-ratio: 1; border: 2px solid var(--main-color); background: white; 
@@ -22,7 +54,7 @@
         .cell span { z-index: 2; background: rgba(255,255,255,0.85); padding: 1px 3px; border-radius: 3px; text-transform: uppercase; }
         .completed { border-color: var(--win-color); background: #d4edda; }
         
-        #status { margin: 10px; padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; font-size: 14px; }
+        #status { width: 100%; padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; font-size: 14px; box-sizing: border-box; }
         
         /* Custom Foťák Overlay */
         #cameraOverlay { 
@@ -40,24 +72,24 @@
         }
 
         button { padding: 12px 25px; font-size: 16px; background: var(--win-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        input { padding: 12px; font-size: 16px; text-align: center; border-radius: 8px; border: 2px solid #ddd; margin: 10px; width: 80%; max-width: 250px; }
+        input { padding: 12px; font-size: 16px; text-align: center; border-radius: 8px; border: 2px solid #ddd; margin: 10px; width: 85%; max-width: 280px; box-sizing: border-box; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <div id="setup-screen">
-        <h1 style="color: var(--main-color);">📍 Kúkovské Bingo</h1>
-        <p>Zadaj svoje meno a začni hľadať!</p>
+        <h1 style="color: var(--main-color); font-size: 32px; margin-bottom: 5px;">📍 Kúkovské Bingo</h1>
+        <p style="color: #7f8c8d; margin-bottom: 25px;">Zadaj svoje meno a začni hľadať!</p>
         <input type="text" id="player-name" placeholder="Tvoje meno">
         <br>
-        <button onclick="startGame()">ŠTARTOVAŤ</button>
+        <button onclick="startGame()" style="width: 85%; max-width: 280px; margin-top: 10px;">ŠTARTOVAŤ</button>
     </div>
 
     <div id="game-ui" class="hidden">
         <div id="status">Hráč: <span id="display-name"></span></div>
         <div class="grid" id="board"></div>
-        <p style="font-size: 12px; color: #7f8c8d; margin-top: 20px;">Klikni na políčko a odfoť predmet!</p>
+        <p style="font-size: 12px; color: #7f8c8d; margin-top: 15px;">Klikni na políčko a odfoť predmet!</p>
     </div>
 
     <div id="cameraOverlay">
@@ -72,7 +104,7 @@
 
     <div id="bingoOverlay">
         <h1 style="font-size: 50px; margin: 0;">BINGO! 🏆</h1>
-        <p style="color: white; font-size: 20px; margin-bottom: 30px;">Skvelá práca! Ukáž tento displej vedúcemu.</p>
+        <p style="color: white; font-size: 20px; margin-bottom: 30px;">Ukáž tento displej vedúcemu.</p>
         
         <div id="admin-section">
             <input type="password" id="adminCode" placeholder="Kód vedúceho">
@@ -88,29 +120,17 @@
     </div>
 
 <script>
-    const MASTER_CODE = "KB26"; // Tvoj tajný kód
+    const MASTER_CODE = "KB26";
     let playerName, activeIdx, videoStream;
     let gameState = [];
 
-    // Tvoj zoznam 25 predmetov
-    const items = [
-        "Hydrant", "Mačka", "Kríž", "Vedro", "Lopata", 
-        "Živý plot", "Fúrik", "Komín", "Bicykel", "Lavička", 
-        "Traktor", "Schody", "Sliepka", "Schránka", "Pneumatika", 
-        "Brána", "Kladivo", "Kosačka", "Sud", "Metla", 
-        "Rebrík", "Vlčiak", "Kvetináč", "Poleno", "Visiaci zámok"
-    ];
+    const items = ["Hydrant", "Mačka", "Kríž", "Vedro", "Lopata", "Živý plot", "Fúrik", "Komín", "Bicykel", "Lavička", "Traktor", "Schody", "Sliepka", "Schránka", "Pneumatika", "Brána", "Kladivo", "Kosačka", "Sud", "Metla", "Rebrík", "Vlčiak", "Kvetináč", "Poleno", "Visiaci zámok"];
 
     function startGame() {
         playerName = document.getElementById('player-name').value.trim();
         if(!playerName) return alert("Musíš zadať meno!");
         
-        // Náhodné premiešanie a vytvorenie stavu hry
-        gameState = items.sort(() => Math.random() - 0.5).map(name => ({ 
-            name, 
-            done: false, 
-            img: null 
-        }));
+        gameState = items.sort(() => Math.random() - 0.5).map(name => ({ name, done: false, img: null }));
         
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('game-ui').classList.remove('hidden');
@@ -125,13 +145,11 @@
             const cell = document.createElement('div');
             cell.className = 'cell' + (item.done ? ' completed' : '');
             cell.innerHTML = `<span>${item.name}</span>`;
-            
             if(item.img) {
                 const imgPreview = document.createElement('img');
                 imgPreview.src = item.img;
                 cell.appendChild(imgPreview);
             }
-            
             cell.onclick = () => { if(!item.done) openCamera(idx); };
             board.appendChild(cell);
         });
@@ -141,14 +159,11 @@
         activeIdx = idx;
         document.getElementById('targetName').innerText = "Fotiť: " + gameState[idx].name;
         document.getElementById('cameraOverlay').style.display = 'flex';
-        
         try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment' } 
-            });
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             document.getElementById('video').srcObject = videoStream;
         } catch (err) {
-            alert("Nepodarilo sa otvoriť kameru. Skontroluj povolenia.");
+            alert("Povolenie kamery je nutné.");
             closeCamera();
         }
     }
@@ -156,42 +171,25 @@
     function takePhoto() {
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
-        
-        canvas.width = 600;
-        canvas.height = 600;
-        
-        // Výrez štvorca z videa pre krajší vzhľad v mriežke
-        context.drawImage(video, 0, 0, 600, 600);
-        
+        canvas.width = 600; canvas.height = 600;
+        canvas.getContext('2d').drawImage(video, 0, 0, 600, 600);
         gameState[activeIdx].done = true;
         gameState[activeIdx].img = canvas.toDataURL('image/jpeg', 0.7);
-        
         closeCamera();
         renderBoard();
         checkBingo();
     }
 
     function closeCamera() {
-        if(videoStream) {
-            videoStream.getTracks().forEach(track => track.stop());
-        }
+        if(videoStream) videoStream.getTracks().forEach(t => t.stop());
         document.getElementById('cameraOverlay').style.display = 'none';
     }
 
     function checkBingo() {
         const s = gameState.map(i => i.done);
-        // Všetky možné výherné línie (riadky, stĺpce, diagonály)
-        const winLines = [
-            [0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24], // riadky
-            [0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24], // stĺpce
-            [0,6,12,18,24],[4,8,12,16,20] // diagonály
-        ];
-        
+        const winLines = [[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];
         if(winLines.some(l => l.every(idx => s[idx]))) {
-            setTimeout(() => {
-                document.getElementById('bingoOverlay').style.display = 'flex';
-            }, 500);
+            setTimeout(() => { document.getElementById('bingoOverlay').style.display = 'flex'; }, 500);
         }
     }
 
@@ -201,7 +199,7 @@
             document.getElementById('admin-section').classList.add('hidden');
             document.getElementById('victory-msg').classList.remove('hidden');
         } else {
-            alert("Nesprávny kód pre vedúceho!");
+            alert("Nesprávny kód!");
         }
     }
 </script>
