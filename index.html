@@ -5,33 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Kúkovské Bingo</title>
     
+    <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    
     <style>
         :root { --main-color: #2c3e50; --win-color: #27ae60; --err-color: #e74c3c; --bg-color: #f4f7f8; --accent: #f1c40f; }
+        
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background: var(--bg-color); margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
+        
         #setup-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; width: 100%; padding: 20px; box-sizing: border-box; }
+        
         #game-ui { width: 100%; max-width: 500px; padding: 10px; box-sizing: border-box; align-self: center; }
+
         #timer-display { font-size: 24px; font-weight: bold; color: #d35400; margin: 10px 0; background: white; padding: 5px 20px; border-radius: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: inline-block; }
+
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px auto; }
         .cell { aspect-ratio: 1; border: 2px solid var(--main-color); background: white; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; position: relative; overflow: hidden; font-weight: bold; border-radius: 8px; }
         .cell img { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
         .cell span { z-index: 2; background: rgba(255,255,255,0.85); padding: 1px 3px; border-radius: 3px; text-transform: uppercase; }
         .completed { border-color: var(--win-color); background: #d4edda; }
+        
         #status { padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; width: 90%; margin: 10px auto; }
+        
+        /* Overlay Foťáku */
         #cameraOverlay { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
         #video, #photoPreview { width: 90%; max-width: 400px; border-radius: 15px; border: 2px solid var(--accent); display: none; }
         .zoom-container { width: 100%; max-width: 300px; margin: 20px auto; display: flex; align-items: center; justify-content: center; gap: 15px; padding: 0 10px; box-sizing: border-box; color: #fff; font-size: 20px; font-weight: bold; }
         input[type=range] { flex: 1; margin: 0; cursor: pointer; }
+        
         #bingoOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); color: white; z-index: 2000; flex-direction: column; padding: 20px; overflow-y: auto; align-items: center; justify-content: center; }
+        
         .win-photos { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 20px 0; }
         .photo-item { display: flex; flex-direction: column; align-items: center; width: 95px; cursor: pointer; transition: 0.2s; border: 3px solid transparent; border-radius: 10px; padding: 5px; }
         .photo-item.selected-bad { border-color: var(--err-color); background: rgba(231, 76, 60, 0.3); }
         .photo-item img { width: 80px; height: 80px; border-radius: 6px; object-fit: cover; }
         .photo-item label { font-size: 10px; margin-top: 5px; color: var(--accent); font-weight: bold; }
-        button { padding: 12px 25px; font-size: 16px; background: var(--win-color); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        button { padding: 12px 25px; font-size: 16px; background: var(--win-color); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        button:active { opacity: 0.8; }
         .btn-red { background: var(--err-color); }
         .btn-blue { background: #3498db; }
         input { padding: 12px; border-radius: 8px; border: 1px solid #ccc; text-align: center; font-size: 16px; }
         .hidden { display: none !important; }
+
+        /* Štýl pre skrytý certifikát (bude sa generovať na pozadí) */
+        #certificate-template {
+            position: absolute; left: -9999px; top: -9999px; /* Schovaný mimo obrazovku */
+            width: 600px; background: white; padding: 30px; text-align: center; color: #333; border: 10px solid var(--main-color); box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
@@ -39,11 +60,13 @@
     <div id="setup-screen">
         <h1 style="font-size: 32px; color: var(--main-color); margin: 0;">📍 Kúkovské Bingo</h1>
         <p style="color: #7f8c8d; margin: 10px 0 30px 0;">Nájdi všetky predmety v rade!</p>
+        
         <div id="new-game-box">
             <input type="text" id="player-name" placeholder="Tvoje meno" style="width: 280px;">
             <br><br>
             <button onclick="startGame(false)">ŠTARTOVAŤ HRU</button>
         </div>
+        
         <div id="resume-box" class="hidden" style="margin-top: 30px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
             <p style="margin: 0 0 15px 0; font-weight: bold; color: var(--main-color);">Máš rozohranú hru!</p>
             <button onclick="startGame(true)" class="btn-blue">POKRAČOVAŤ</button>
@@ -87,7 +110,7 @@
             </div>
 
             <div id="admin-results" class="hidden">
-                <p style="color: var(--err-color); font-size: 13px; margin-top: 15px;">Kliknutím označ zlé fotky:</p>
+                <p style="color: var(--err-color); font-size: 13px; margin-top: 15px;">Kliknutím označ zlé fotky pre ich opakovanie:</p>
                 <div class="win-photos" id="photo-gallery"></div>
                 <div style="display:flex; flex-direction:column; gap:10px; width: 100%; max-width: 300px; margin: 10px auto;">
                     <button onclick="confirmWin()">POTVRDIŤ VÝHRU ✅</button>
@@ -101,14 +124,31 @@
             <h1 style="color:var(--win-color); font-size:60px; margin: 10px 0;">VÍŤAZ!</h1>
             <p id="final-time-label" style="font-size: 28px; font-weight: bold; color: white;"></p>
             <br>
-            <button onclick="resetGamePrompt()">NOVÁ HRA</button>
+            <div style="display:flex; flex-direction:column; gap:15px; margin-top:20px;">
+                <button onclick="downloadCertificate()" class="btn-blue" style="font-size:18px;">💾 STIAHNUŤ CERTIFIKÁT</button>
+                <button onclick="resetGamePrompt()" style="background:none; color:grey; font-size:14px; text-decoration:underline; border:none;">Začať novú hru</button>
+            </div>
         </div>
     </div>
 
+    <div id="certificate-template">
+        <h1 style="color: var(--main-color); font-size: 36px; margin-bottom: 5px;">KÚKOVSKÉ BINGO</h1>
+        <h2 style="color: #555; margin-top: 0;">CERTIFIKÁT VÍŤAZA</h2>
+        <hr style="border: 2px solid var(--accent); width: 80%; margin: 20px auto;">
+        <p style="font-size: 22px;">Hráč: <strong id="cert-name" style="color: var(--main-color);"></strong></p>
+        <p style="font-size: 24px; font-weight: bold; background: #eee; padding: 10px; border-radius: 10px;">Dosiahnutý čas: <span id="cert-time" style="color: #d35400;"></span></p>
+        <p style="margin-top: 25px; font-size: 18px; color: #666;">Víťazný rad fotiek:</p>
+        <div id="cert-photos" style="display: flex; gap: 15px; justify-content: center; margin-top: 15px;">
+            </div>
+        <p style="margin-top: 40px; font-size: 14px; color: #999;">Vygenerované aplikáciou Kúkovské Bingo © 2024</p>
+    </div>
+
 <script>
-    const MASTER_CODE = "KB26";
+    const MASTER_CODE = "KUKOVO2026";
     let playerName, activeIdx, videoStream, timerInterval, videoTrack, totalSeconds = 0;
     let gameState = [], winningLineGlobal = [], lastCapturedData = null;
+    const jsConfetti = new JSConfetti(); // Inicializácia konfiet
+
     const itemsList = ["Hydrant", "Mačka", "Kríž", "Vedro", "Lopata", "Živý plot", "Fúrik", "Komín", "Bicykel", "Lavička", "Traktor", "Schody", "Sliepka", "Schránka", "Pneumatika", "Brána", "Kladivo", "Kosačka", "Sud", "Metla", "Rebrík", "Vlčiak", "Kvetináč", "Poleno", "Visiaci zámok"];
 
     window.onload = () => { if(localStorage.getItem('bingo_progres')) document.getElementById('resume-box').classList.remove('hidden'); };
@@ -174,11 +214,12 @@
     }
 
     function captureImage() {
+        const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         canvas.width = 500; canvas.height = 500;
-        canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0, 500, 500);
+        canvas.getContext('2d').drawImage(video, 0, 0, 500, 500);
         lastCapturedData = canvas.toDataURL('image/jpeg', 0.6);
-        document.getElementById('video').style.display = 'none';
+        video.style.display = 'none';
         document.getElementById('zoomControls').style.display = 'none';
         document.getElementById('captureBtns').classList.add('hidden');
         document.getElementById('photoPreview').src = lastCapturedData;
@@ -262,9 +303,75 @@
         document.getElementById('victory-final').classList.remove('hidden'); 
         document.getElementById('final-time-label').innerText = "Váš čas: " + finalTime;
         localStorage.removeItem('bingo_progres'); 
+        
+        // SPUSTIŤ KONFETY 🎉
+        jsConfetti.addConfetti({
+            emojis: ['🎉', '🏆', '🎈', '✨', '⭐'],
+            emojiSize: 50,
+            confettiNumber: 100,
+        });
+        // Pridať aj klasické papierové konfety
+        setTimeout(() => jsConfetti.addConfetti(), 300);
     }
     
-    function resetGamePrompt() { if(confirm("Zmazať progres?")) { localStorage.removeItem('bingo_progres'); location.reload(); } }
+    // NOVÉ: Funkcia na generovanie a stiahnutie certifikátu
+    async function downloadCertificate() {
+        const btn = event.target;
+        btn.innerText = "⏳ GENERUJEM CERTIFIKÁT...";
+        btn.disabled = true;
+
+        // 1. Naplniť šablónu dátami
+        document.getElementById('cert-name').innerText = playerName.toUpperCase();
+        document.getElementById('cert-time').innerText = document.getElementById('timer-display').innerText;
+        
+        const certPhotosDiv = document.getElementById('cert-photos');
+        certPhotosDiv.innerHTML = ""; // Vyčistiť staré
+        
+        // 2. Pridať 5 víťazných fotiek do šablóny
+        winningLineGlobal.forEach(idx => {
+            const item = gameState[idx];
+            const div = document.createElement('div');
+            div.style.cssText = "display:flex; flex-direction:column; align-items:center; width:90px;";
+            div.innerHTML = `
+                <img src="${item.img}" style="width:80px; height:80px; object-fit:cover; border:2px solid #333; border-radius:5px;">
+                <label style="font-size:10px; margin-top:3px; font-weight:bold; color:#555; text-transform:uppercase;">${item.name}</label>
+            `;
+            certPhotosDiv.appendChild(div);
+        });
+
+        // 3. Počkať chvíľu na vykreslenie fotiek
+        await new Promise(r => setTimeout(r, 500));
+
+        // 4. Použiť html2canvas na vytvorenie obrázka
+        const template = document.getElementById('certificate-template');
+        try {
+            const canvas = await html2canvas(template, {
+                scale: 2, // Vyššia kvalita obrázka
+                backgroundColor: "#ffffff",
+                logging: false,
+                useCORS: true
+            });
+
+            // 5. Vytvoriť odkaz na stiahnutie
+            const image = canvas.toDataURL("image/png");
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `bingo-vysledok-${playerName}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert("Certifikát bol uložený do vašich stiahnutých súborov! 🎉");
+        } catch (error) {
+            console.error(error);
+            alert("Nepodarilo sa vygenerovať obrázok. Skúste urobiť screenshot.");
+        } finally {
+            btn.innerText = "💾 STIAHNUŤ CERTIFIKÁT";
+            btn.disabled = false;
+        }
+    }
+
+    function resetGamePrompt() { if(confirm("Zmazať progres a začať úplne novú hru?")) { localStorage.removeItem('bingo_progres'); location.reload(); } }
 </script>
 </body>
 </html>
