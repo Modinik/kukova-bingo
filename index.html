@@ -24,9 +24,13 @@
         
         #status { padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; width: 90%; margin: 10px auto; }
         
-        #cameraOverlay { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 20px; }
-        #video, #photoPreview { width: 90%; max-width: 400px; border-radius: 15px; border: 2px solid var(--accent); display: none; object-fit: cover; }
-        .zoom-container { width: 80%; max-width: 300px; margin: 20px auto; display: flex; align-items: center; justify-content: center; gap: 15px; padding: 0 10px; box-sizing: border-box; color: #fff; font-size: 20px; font-weight: bold; }
+        /* ZVÄČŠENÝ FOŤÁK */
+        #cameraOverlay { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 10px; }
+        
+        /* Tu som zmenil max-width zo 400px na 600px a width na 95% */
+        #video, #photoPreview { width: 95%; max-width: 600px; border-radius: 15px; border: 3px solid var(--accent); display: none; object-fit: cover; aspect-ratio: 1/1; }
+        
+        .zoom-container { width: 90%; max-width: 400px; margin: 15px auto; display: flex; align-items: center; justify-content: center; gap: 15px; color: #fff; font-size: 20px; font-weight: bold; }
         input[type=range] { flex: 1; margin: 0; cursor: pointer; }
         
         #bingoOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); color: white; z-index: 2000; flex-direction: column; padding: 20px; overflow-y: auto; align-items: center; justify-content: center; }
@@ -73,20 +77,24 @@
     </div>
 
     <div id="cameraOverlay">
-        <h2 id="targetName" style="color: var(--accent); margin-bottom: 20px;">Odfotiť</h2>
+        <h2 id="targetName" style="color: var(--accent); margin-bottom: 10px; font-size: 24px;">Odfotiť</h2>
+        
         <video id="video" playsinline autoplay style="display: block;"></video>
         <img id="photoPreview" src="" alt="Náhľad">
+
         <div id="zoomControls" class="zoom-container">
             <span>-</span>
             <input type="range" id="zoomRange" min="1" max="5" step="0.1" value="1">
             <span>+</span>
         </div>
-        <div id="captureBtns" style="margin-top: 20px;">
-            <button onclick="captureImage()" style="background:white; color:black; padding:15px 30px; margin-right:10px;">📸 ODFOTIŤ</button>
+
+        <div id="captureBtns" style="margin-top: 10px;">
+            <button onclick="captureImage()" style="background:white; color:black; padding:15px 35px; margin-right:10px; font-size: 18px;">📸 ODFOTIŤ</button>
             <button onclick="closeCamera()" class="btn-red">ZRUŠIŤ</button>
         </div>
-        <div id="confirmBtns" class="hidden" style="margin-top: 20px;">
-            <button onclick="usePhoto()" style="padding:15px 30px; margin-right:10px;">✅OK</button>
+
+        <div id="confirmBtns" class="hidden" style="margin-top: 10px;">
+            <button onclick="usePhoto()" style="padding:15px 30px; margin-right:10px; font-size: 18px;">OK</button>
             <button onclick="retakePhoto()" class="btn-red">ZNOVA</button>
         </div>
         <canvas id="canvas" style="display:none;"></canvas>
@@ -206,7 +214,6 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         
-        // VYSOKÉ ROZLÍŠENIE PRE OSTRÉ FOTKY
         const size = Math.min(video.videoWidth, video.videoHeight);
         canvas.width = 1200; 
         canvas.height = 1200;
@@ -218,7 +225,6 @@
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(video, sx, sy, size, size, 0, 0, 1200, 1200);
         
-        // VYSOKÁ KVALITA JPEG (0.95)
         lastCapturedData = canvas.toDataURL('image/jpeg', 0.95);
         document.getElementById('video').style.display = 'none';
         document.getElementById('zoomControls').style.display = 'none';
