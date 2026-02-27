@@ -7,54 +7,26 @@
     
     <style>
         :root { --main-color: #2c3e50; --win-color: #27ae60; --err-color: #e74c3c; --bg-color: #f4f7f8; --accent: #f1c40f; }
-        
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background: var(--bg-color); margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
-        
         #setup-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; width: 100%; padding: 20px; box-sizing: border-box; }
-        
         #game-ui { width: 100%; max-width: 500px; padding: 10px; box-sizing: border-box; align-self: center; }
-
         #timer-display { font-size: 24px; font-weight: bold; color: #d35400; margin: 10px 0; background: white; padding: 5px 20px; border-radius: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: inline-block; }
-
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px auto; }
         .cell { aspect-ratio: 1; border: 2px solid var(--main-color); background: white; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; position: relative; overflow: hidden; font-weight: bold; border-radius: 8px; }
         .cell img { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
         .cell span { z-index: 2; background: rgba(255,255,255,0.85); padding: 1px 3px; border-radius: 3px; text-transform: uppercase; }
         .completed { border-color: var(--win-color); background: #d4edda; }
-        
         #status { padding: 12px; background: var(--main-color); color: white; border-radius: 8px; font-weight: bold; width: 90%; margin: 10px auto; }
-        
-        /* Overlay Foťáku */
         #cameraOverlay { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
         #video, #photoPreview { width: 90%; max-width: 400px; border-radius: 15px; border: 2px solid var(--accent); display: none; }
-        
-        /* OPRAVENÉ: Vycentrovaný kontajner pre Zoom */
-        .zoom-container { 
-            width: 100%; 
-            max-width: 350px; 
-            margin: 20px auto; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; /* Horizontálne vycentrovanie obsahu */
-            gap: 15px; 
-            padding: 0 20px;
-            box-sizing: border-box;
-        }
-        /* Zabezpečí, aby slider zaberal dostupný priestor medzi ikonami, ale bol vycentrovaný */
-        input[type=range] {
-            flex: 0 1 200px; /* Nesťahovať sa pod 200px, ak je miesto */
-            margin: 0;
-            cursor: pointer;
-        }
-        
+        .zoom-container { width: 100%; max-width: 300px; margin: 20px auto; display: flex; align-items: center; justify-content: center; gap: 15px; padding: 0 10px; box-sizing: border-box; color: #fff; font-size: 20px; font-weight: bold; }
+        input[type=range] { flex: 1; margin: 0; cursor: pointer; }
         #bingoOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); color: white; z-index: 2000; flex-direction: column; padding: 20px; overflow-y: auto; align-items: center; justify-content: center; }
-        
         .win-photos { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 20px 0; }
         .photo-item { display: flex; flex-direction: column; align-items: center; width: 95px; cursor: pointer; transition: 0.2s; border: 3px solid transparent; border-radius: 10px; padding: 5px; }
         .photo-item.selected-bad { border-color: var(--err-color); background: rgba(231, 76, 60, 0.3); }
         .photo-item img { width: 80px; height: 80px; border-radius: 6px; object-fit: cover; }
         .photo-item label { font-size: 10px; margin-top: 5px; color: var(--accent); font-weight: bold; }
-
         button { padding: 12px 25px; font-size: 16px; background: var(--win-color); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-red { background: var(--err-color); }
         .btn-blue { background: #3498db; }
@@ -67,13 +39,11 @@
     <div id="setup-screen">
         <h1 style="font-size: 32px; color: var(--main-color); margin: 0;">📍 Kúkovské Bingo</h1>
         <p style="color: #7f8c8d; margin: 10px 0 30px 0;">Nájdi všetky predmety v rade!</p>
-        
         <div id="new-game-box">
             <input type="text" id="player-name" placeholder="Tvoje meno" style="width: 280px;">
             <br><br>
             <button onclick="startGame(false)">ŠTARTOVAŤ HRU</button>
         </div>
-        
         <div id="resume-box" class="hidden" style="margin-top: 30px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
             <p style="margin: 0 0 15px 0; font-weight: bold; color: var(--main-color);">Máš rozohranú hru!</p>
             <button onclick="startGame(true)" class="btn-blue">POKRAČOVAŤ</button>
@@ -84,69 +54,61 @@
         <div id="status">Hráč: <span id="display-name"></span></div>
         <div id="timer-display">00:00</div>
         <div class="grid" id="board"></div>
-        <button onclick="resetGamePrompt()" style="background:none; color:grey; font-size:11px; text-decoration:underline; margin-top: 20px; border:none; cursor:pointer;">Resetovať hru</button>
+        <button onclick="resetGamePrompt()" style="background:none; color:grey; font-size:11px; text-decoration:underline; margin-top: 20px; border:none; cursor:pointer;">Vymazať progres a začať odznova</button>
     </div>
 
     <div id="cameraOverlay">
         <h2 id="targetName" style="color: var(--accent);">Odfotiť</h2>
-        
         <video id="video" playsinline autoplay style="display: block;"></video>
-        
         <img id="photoPreview" src="" alt="Náhľad">
-
         <div id="zoomControls" class="zoom-container">
-            <span style="font-size:1.2rem;">🔍<sub>-</sub></span>
-            <input type="range" id="zoomRange" min="1" max="5" step="0.1" value="1">
-            <span style="font-size:1.2rem;">🔍<sub>+</sub></span>
+            <span>-</span><input type="range" id="zoomRange" min="1" max="5" step="0.1" value="1"><span>+</span>
         </div>
-
         <div id="captureBtns" style="margin-top: 20px;">
             <button onclick="captureImage()" style="background:white; color:black; padding:15px 30px; margin-right:10px;">📸 ODFOTIŤ</button>
             <button onclick="closeCamera()" class="btn-red">ZRUŠIŤ</button>
         </div>
-
         <div id="confirmBtns" class="hidden" style="margin-top: 20px;">
             <button onclick="usePhoto()" style="padding:15px 30px; margin-right:10px;">OK</button>
             <button onclick="retakePhoto()" class="btn-red">ZNOVA</button>
         </div>
-
         <canvas id="canvas" style="display:none;"></canvas>
     </div>
 
     <div id="bingoOverlay">
-        <h1 style="color:var(--accent); font-size: 45px; margin: 0;">🏆 BINGO 🏆</h1>
-        <p id="bingo-time-messsage" style="font-size: 22px; font-weight: bold; margin: 15px 0; color: #fff;"></p>
-        
-        <div id="admin-auth" style="margin-top: 10px;">
-            <p style="font-size: 14px; color: #ccc; margin-bottom: 5px;">Zadaj kód vedúceho na zobrazenie fotiek:</p>
-            <input type="password" id="adminCode" placeholder="Kód" style="width: 200px;">
-            <br><br>
-            <button onclick="unlockResults()">ZOBRAZIŤ VÝSLEDKY</button>
-        </div>
+        <div id="pending-validation">
+            <h1 style="color:var(--accent); font-size: 45px; margin: 0;">🏆 BINGO! 🏆</h1>
+            <p id="instruction-text" style="font-size: 20px; margin: 20px 0;">Daj skontrolovať vedúcemu</p>
+            
+            <div id="admin-auth">
+                <input type="password" id="adminCode" placeholder="Kód vedúceho" style="width: 200px;">
+                <br><br>
+                <button onclick="unlockResults()">SKONTROLOVAŤ FOTKY</button>
+            </div>
 
-        <div id="admin-results" class="hidden">
-            <p style="color: var(--err-color); font-size: 13px; margin-top: 15px;">Kliknutím označ zlé fotky:</p>
-            <div class="win-photos" id="photo-gallery"></div>
-            <div style="display:flex; flex-direction:column; gap:10px; width: 100%; max-width: 300px; margin-top:10px;">
-                <button onclick="confirmWin()">POTVRDIŤ VÝHRU ✅</button>
-                <button onclick="processRejection()" class="btn-red">ZAMIETNUŤ OZNAČENÉ ❌</button>
+            <div id="admin-results" class="hidden">
+                <p style="color: var(--err-color); font-size: 13px; margin-top: 15px;">Kliknutím označ zlé fotky:</p>
+                <div class="win-photos" id="photo-gallery"></div>
+                <div style="display:flex; flex-direction:column; gap:10px; width: 100%; max-width: 300px; margin: 10px auto;">
+                    <button onclick="confirmWin()">POTVRDIŤ VÝHRU ✅</button>
+                    <button onclick="processRejection()" class="btn-red">ZAMIETNUŤ OZNAČENÉ ❌</button>
+                </div>
             </div>
         </div>
 
         <div id="victory-final" class="hidden">
-            <h1 style="color:var(--win-color); font-size:50px; margin: 20px 0;">VÍŤAZ!</h1>
+            <h1 style="color:var(--accent); font-size: 45px; margin: 0;">🏆 BINGO! 🏆</h1>
+            <h1 style="color:var(--win-color); font-size:60px; margin: 10px 0;">VÍŤAZ!</h1>
+            <p id="final-time-label" style="font-size: 28px; font-weight: bold; color: white;"></p>
+            <br>
             <button onclick="resetGamePrompt()">NOVÁ HRA</button>
         </div>
     </div>
 
 <script>
     const MASTER_CODE = "KB26";
-    let playerName, activeIdx, videoStream, startTime, timerInterval, videoTrack, totalSeconds = 0;
-    let gameState = [];
-    let badItemsIndices = new Set();
-    let winningLineGlobal = [];
-    let lastCapturedData = null;
-
+    let playerName, activeIdx, videoStream, timerInterval, videoTrack, totalSeconds = 0;
+    let gameState = [], winningLineGlobal = [], lastCapturedData = null;
     const itemsList = ["Hydrant", "Mačka", "Kríž", "Vedro", "Lopata", "Živý plot", "Fúrik", "Komín", "Bicykel", "Lavička", "Traktor", "Schody", "Sliepka", "Schránka", "Pneumatika", "Brána", "Kladivo", "Kosačka", "Sud", "Metla", "Rebrík", "Vlčiak", "Kvetináč", "Poleno", "Visiaci zámok"];
 
     window.onload = () => { if(localStorage.getItem('bingo_progres')) document.getElementById('resume-box').classList.remove('hidden'); };
@@ -197,8 +159,7 @@
         activeIdx = idx;
         document.getElementById('targetName').innerText = "Fotiť: " + gameState[idx].name;
         document.getElementById('cameraOverlay').style.display = 'flex';
-        resetZoomUI(); 
-        retakePhoto();
+        resetZoomUI(); retakePhoto();
         try {
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             document.getElementById('video').srcObject = videoStream;
@@ -209,20 +170,19 @@
                 zoomInput.min = caps.zoom.min; zoomInput.max = caps.zoom.max; zoomInput.step = caps.zoom.step;
                 zoomInput.oninput = () => { videoTrack.applyConstraints({ advanced: [{ zoom: zoomInput.value }] }); };
             }
-        } catch (err) { alert("Povoľte kameru."); }
+        } catch (err) { alert("Chyba kamery."); }
     }
 
     function captureImage() {
-        const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         canvas.width = 500; canvas.height = 500;
-        canvas.getContext('2d').drawImage(video, 0, 0, 500, 500);
+        canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0, 500, 500);
         lastCapturedData = canvas.toDataURL('image/jpeg', 0.6);
-        video.style.display = 'none';
+        document.getElementById('video').style.display = 'none';
         document.getElementById('zoomControls').style.display = 'none';
         document.getElementById('captureBtns').classList.add('hidden');
-        const preview = document.getElementById('photoPreview');
-        preview.src = lastCapturedData; preview.style.display = 'block';
+        document.getElementById('photoPreview').src = lastCapturedData;
+        document.getElementById('photoPreview').style.display = 'block';
         document.getElementById('confirmBtns').classList.remove('hidden');
     }
 
@@ -237,10 +197,8 @@
 
     function resetZoomUI() {
         const zoomInput = document.getElementById('zoomRange');
-        zoomInput.value = 1; // Vizuálne vráti posuvník na začiatok
-        if (videoTrack) {
-            videoTrack.applyConstraints({ advanced: [{ zoom: 1 }] }).catch(() => {});
-        }
+        zoomInput.value = 1;
+        if (videoTrack) videoTrack.applyConstraints({ advanced: [{ zoom: 1 }] }).catch(() => {});
     }
 
     function usePhoto() {
@@ -252,7 +210,7 @@
     function closeCamera() {
         if(videoStream) videoStream.getTracks().forEach(t => t.stop());
         document.getElementById('cameraOverlay').style.display = 'none';
-        resetZoomUI(); // Vynuluje slider pri každom zavretí
+        resetZoomUI();
     }
 
     function checkBingo() {
@@ -262,11 +220,6 @@
         if(line) { 
             winningLineGlobal = line; 
             clearInterval(timerInterval); 
-            
-            // ZMENENÉ: Zobraziť finálny čas priamo pod nápisom BINGO
-            const finalTimeStr = document.getElementById('timer-display').innerText;
-            document.getElementById('bingo-time-messsage').innerText = `Váš čas: ${finalTimeStr}`;
-            
             document.getElementById('bingoOverlay').style.display = 'flex'; 
         }
     }
@@ -274,8 +227,8 @@
     function unlockResults() {
         if(document.getElementById('adminCode').value === MASTER_CODE) {
             document.getElementById('admin-auth').classList.add('hidden');
+            document.getElementById('instruction-text').classList.add('hidden');
             document.getElementById('admin-results').classList.remove('hidden');
-            // final-time-display odstránený zo scriptu, čas je už zobrazený
             const gallery = document.getElementById('photo-gallery');
             gallery.innerHTML = "";
             let badIndices = new Set();
@@ -296,12 +249,21 @@
         badIndices.forEach(idx => { gameState[idx].done = false; gameState[idx].img = null; });
         saveProgres();
         document.getElementById('bingoOverlay').style.display = 'none';
+        document.getElementById('admin-results').classList.add('hidden');
         document.getElementById('admin-auth').classList.remove('hidden');
+        document.getElementById('instruction-text').classList.remove('hidden');
         document.getElementById('adminCode').value = "";
         renderBoard(); startTimer();
     }
 
-    function confirmWin() { document.getElementById('victory-final').classList.remove('hidden'); document.getElementById('admin-results').classList.add('hidden'); localStorage.removeItem('bingo_progres'); }
+    function confirmWin() { 
+        const finalTime = document.getElementById('timer-display').innerText;
+        document.getElementById('pending-validation').classList.add('hidden');
+        document.getElementById('victory-final').classList.remove('hidden'); 
+        document.getElementById('final-time-label').innerText = "Váš čas: " + finalTime;
+        localStorage.removeItem('bingo_progres'); 
+    }
+    
     function resetGamePrompt() { if(confirm("Zmazať progres?")) { localStorage.removeItem('bingo_progres'); location.reload(); } }
 </script>
 </body>
